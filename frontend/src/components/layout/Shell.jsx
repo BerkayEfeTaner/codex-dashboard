@@ -3,7 +3,6 @@ import { Button, Nav, NavItem } from 'reactstrap';
 import {
   BarChart3,
   Bot,
-  Database,
   FolderGit2,
   Gauge,
   GitBranch,
@@ -42,7 +41,6 @@ const navGroups = [
   {
     label: 'System',
     items: [
-      { to: '/databases', label: 'Databases', icon: Database },
       { to: '/profiles', label: 'Profiles', icon: Settings },
       { to: '/system', label: 'System', icon: ShieldCheck },
       { to: '/release', label: 'Release', icon: PackageCheck }

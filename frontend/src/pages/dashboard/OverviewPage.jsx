@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { Activity, Bot, CalendarDays, Database, FileText, Gauge, GitBranch, Layers3, ShieldCheck } from 'lucide-react';
+import { Activity, Bot, CalendarDays, FileText, Gauge, GitBranch, Layers3, ShieldCheck } from 'lucide-react';
 import { Badge } from 'reactstrap';
 import { Detail } from '../../components/ui/Detail.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
@@ -95,7 +95,6 @@ export default function OverviewPage({ summary, loading }) {
   const usage = summary?.usage;
   const rateLimits = usage?.rateLimits;
   const recentActivity = summary?.activity?.slice(0, 5) || [];
-  const databaseFiles = health?.databases?.files?.slice(0, 4) || [];
   const sourceFiles = health?.sources?.files?.slice(0, 5) || [];
 
   if (loading && !summary) return <div className="panel">Loading dashboard...</div>;
@@ -153,15 +152,6 @@ export default function OverviewPage({ summary, loading }) {
                 {health?.sources?.readable || 0}/{health?.sources?.total || 0} sources readable
               </strong>
               <span>{health?.sources?.missing || 0} missing source files</span>
-            </div>
-          </div>
-          <div className="compact-row icon-row">
-            <Database size={18} aria-hidden="true" />
-            <div>
-              <strong>
-                {health?.databases?.available || 0}/{health?.databases?.total || 0} databases available
-              </strong>
-              <span>{health?.databases?.errored || 0} database errors</span>
             </div>
           </div>
         </div>
@@ -225,30 +215,6 @@ export default function OverviewPage({ summary, loading }) {
             </div>
           ))}
         </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <h2>Databases</h2>
-            <p>Availability preview</p>
-          </div>
-          <Badge color={health?.databases?.errored ? 'warning' : 'success'}>
-            {health?.databases?.available || 0}/{health?.databases?.total || 0}
-          </Badge>
-        </div>
-        {databaseFiles.length === 0 ? (
-          <EmptyState title="No database files" description="Known SQLite source files will appear here." />
-        ) : (
-          <div className="compact-list">
-            {databaseFiles.map((file) => (
-              <div className="compact-row" key={file.name}>
-                <strong>{file.name}</strong>
-                <span>{file.available ? 'available' : file.error || 'unavailable'}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <section className="panel">

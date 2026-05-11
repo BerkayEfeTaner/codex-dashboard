@@ -20,8 +20,7 @@ const summary = {
     status: 'healthy',
     codexHomeReadable: true,
     codexHome: 'C:\\Users\\sezer\\.codex',
-    sources: { readable: 2, total: 2, missing: 0, files: [] },
-    databases: { available: 2, total: 2, errored: 0, files: [] }
+    sources: { readable: 2, total: 2, missing: 0, files: [] }
   },
   usage: {
     source: {
