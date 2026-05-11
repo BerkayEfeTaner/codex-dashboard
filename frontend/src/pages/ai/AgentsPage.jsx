@@ -15,7 +15,7 @@ export default function AgentsPage() {
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return agents.filter((agent) => {
-      const haystack = [agent.name, agent.id, agent.team, agent.model, ...(agent.skills || [])].join(' ').toLowerCase();
+      const haystack = [agent.name, agent.id, agent.team, agent.model, agent.type, agent.scope, ...(agent.skills || [])].join(' ').toLowerCase();
       return haystack.includes(needle);
     });
   }, [agents, query]);
@@ -29,16 +29,16 @@ export default function AgentsPage() {
     <div className="page-grid agents-layout">
       <section className="panel agents-list-panel">
         <PageHeader
-          title="Agents"
-          subtitle={loading ? 'Loading agents...' : `${filtered.length} visible agents`}
+          title="Subagents"
+          subtitle={loading ? 'Loading subagents...' : `${filtered.length} visible Codex records`}
           action={(
             <label className="search-box">
               <Search size={16} aria-hidden="true" />
               <input
-                aria-label="Search agents"
+                aria-label="Search subagents"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search agents"
+                placeholder="Search subagents"
               />
             </label>
           )}
@@ -46,8 +46,8 @@ export default function AgentsPage() {
         <InlineError message={error} />
         {filtered.length === 0 ? (
           <EmptyState
-            title="No agents found"
-            description={query ? 'Try a different search term.' : 'No Codex agents were found in the configured source files.'}
+            title="No subagents found"
+            description={query ? 'Try a different search term.' : 'No Codex subagent TOML files or local profile notes were found.'}
           />
         ) : (
           <div className="agent-grid">
@@ -61,7 +61,7 @@ export default function AgentsPage() {
                 <h3>{agent.name || agent.id}</h3>
                 <p>{agent.description || agent.instructions || 'No description'}</p>
                 <div className="chips">
-                  {[agent.team, agent.model, agent.reasoningEffort, ...(agent.skills || []).slice(0, 3)]
+                  {[agent.type, agent.scope, agent.team, agent.model, agent.reasoningEffort, ...(agent.skills || []).slice(0, 3)]
                     .filter(Boolean)
                     .map((chip) => <span className="chip" key={chip}>{chip}</span>)}
                 </div>
@@ -74,16 +74,16 @@ export default function AgentsPage() {
       <section className="panel agent-detail-panel">
         <div className="panel-header">
           <div>
-            <span className="eyebrow">Selected agent</span>
-            <h2>{detail?.name || detail?.id || 'Agent detail'}</h2>
+            <span className="eyebrow">Selected record</span>
+            <h2>{detail?.name || detail?.id || 'Subagent detail'}</h2>
           </div>
           {detail?.team && <Badge color="light">{detail.team}</Badge>}
         </div>
         <InlineError message={detailState.error} />
         {!detail ? (
           <EmptyState
-            title={detailState.loading ? 'Loading detail' : 'No agent selected'}
-            description="Select an agent from the list to inspect its stable detail contract."
+            title={detailState.loading ? 'Loading detail' : 'No subagent selected'}
+            description="Select a subagent or local profile record to inspect its source-backed detail."
           />
         ) : (
           <>

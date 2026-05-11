@@ -32,7 +32,11 @@ export default defineConfig(({ mode }) => ({
   server: {
     port: 5174,
     proxy: {
-      '/api': 'http://localhost:3132'
+      '/api': {
+        target: 'http://127.0.0.1:3132',
+        changeOrigin: true,
+        secure: false
+      }
     }
   },
   test: {

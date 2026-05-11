@@ -5,21 +5,14 @@ const crypto = require('crypto');
 const { 
   CODEX_DIR, 
   PROJECT_ROOT, 
-  SKILLS_DIR, 
-  PLUGIN_CACHE_DIR, 
-  PLUGIN_ROOT_DIR, 
-  MARKETPLACE_FILE, 
   dashboardFiles, 
   sqliteFiles, 
-  jsonlFiles 
 } = require('./constants');
 const { 
   readJsonFile, 
   readTextFile, 
-  readJsonlTail, 
   canReadPath, 
   statPath, 
-  statFile, 
   groupBy, 
   clampLimit, 
   clampOffset, 
@@ -29,6 +22,10 @@ const {
   parseJsonSafe 
 } = require('./utils');
 const { checkSqliteAvailability, openReadonlyDatabase } = require('./db');
+const { getAgentIdentitySet, readAgents, threadMatchesAgent } = require('./services/agents');
+const { buildCapabilitiesPayload } = require('./services/skills');
+const { buildUsageSummary, readUsageLimitSettings } = require('./services/usage');
+const { buildHealthSummary, buildSystemSummary: buildBaseSystemSummary, statSourceFile } = require('./services/system');
 
 // --- Helper Functions ---
 function clampDays(value, fallback = 14, max = 90) {
@@ -43,29 +40,6 @@ function buildUtcDayBuckets(days) {
 
 function getRangeStartUnix(day) {
   return Math.floor(new Date(`${day}T00:00:00.000Z`).getTime() / 1000);
-}
-
-// --- Agent & Identity ---
-function stableAgentId(agent) {
-  if (agent?.id) return String(agent.id);
-  return [agent?.team, agent?.name].filter(Boolean).join('-').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || null;
-}
-
-function normalizeAgents(payload) {
-  return Array.isArray(payload?.agents) ? payload.agents.filter(Boolean) : [];
-}
-
-function readAgents() {
-  const agentsPayload = readJsonFile(path.join(CODEX_DIR, dashboardFiles.agents), { agents: [] });
-  return normalizeAgents(agentsPayload).map(a => ({ ...a, id: stableAgentId(a) })).filter(a => a.id);
-}
-
-function getAgentIdentitySet(agent) {
-  return new Set([agent.id, agent.name, agent.sourceAgentId, agent.sourceAgentType].filter(Boolean).map(v => String(v).trim().toLowerCase()));
-}
-
-function threadMatchesAgent(thread, identity) {
-  return [thread.agentNickname, thread.agentRole, thread.model].filter(Boolean).map(v => String(v).trim().toLowerCase()).some(c => identity.has(c));
 }
 
 // --- Threads & Sessions ---
@@ -224,122 +198,6 @@ function readWorkspaces(options = {}) {
   } finally { db.close(); }
 }
 
-// --- Usage ---
-function readUsageLimitSettings() {
-  const config = readJsonFile(path.join(CODEX_DIR, 'dashboard-limits.json'), {});
-  const res = (cVal, eVal, cK, eK) => {
-    const eLim = parseInt(eVal, 10); if (eLim > 0) return { limitTokens: eLim, source: 'env', sourceKey: eK };
-    const cLim = parseInt(cVal, 10); if (cLim > 0) return { limitTokens: cLim, source: 'config', sourceKey: `dashboard-limits.json:${cK}` };
-    return { limitTokens: null, source: 'unconfigured', sourceKey: null };
-  };
-  return { daily: res(config.dailyTokenLimit, process.env.CODEX_DAILY_TOKEN_LIMIT, 'dailyTokenLimit', 'CODEX_DAILY_TOKEN_LIMIT'), weekly: res(config.weeklyTokenLimit, process.env.CODEX_WEEKLY_TOKEN_LIMIT, 'weeklyTokenLimit', 'CODEX_WEEKLY_TOKEN_LIMIT') };
-}
-
-function buildCodexRateLimitSummary() {
-  const sDir = path.join(CODEX_DIR, 'sessions');
-  const source = statPath('sessions', sDir);
-  let filesScanned = 0;
-
-  if (source.exists && source.readable) {
-    try {
-      filesScanned = fs.readdirSync(sDir, { recursive: true })
-        .filter((entry) => String(entry).endsWith('.jsonl'))
-        .slice(0, 250)
-        .length;
-    } catch {
-      filesScanned = 0;
-    }
-  }
-
-  return {
-    source: {
-      type: 'local-codex-session-jsonl',
-      path: sDir,
-      available: Boolean(source.exists && source.readable),
-      filesScanned,
-      error: source.exists ? (source.readable ? null : 'unreadable') : 'missing'
-    },
-    updatedAt: null,
-    planType: null,
-    limitId: null,
-    limitName: null,
-    rateLimitReachedType: null,
-    primary: null,
-    secondary: null
-  };
-}
-
-function buildUsagePeriod({ key, label, window, days, limit, nowSeconds, nowIso }) {
-  const fromTs = nowSeconds - days * 86400;
-  // readUsageWindowStats inline
-  let usedTokens = 0, sessions = 0, logEvents = 0, estBytes = 0;
-  const dbS = openReadonlyDatabase('state_5.sqlite');
-  if (dbS) { try { const r = dbS.prepare("SELECT COUNT(*) AS sessions, COALESCE(SUM(tokens_used), 0) AS usedTokens FROM threads WHERE updated_at >= ?").get(fromTs); sessions = r.sessions; usedTokens = r.usedTokens; } finally { dbS.close(); } }
-  const dbL = openReadonlyDatabase('logs_2.sqlite');
-  if (dbL) { try { const r = dbL.prepare("SELECT COUNT(*) AS logEvents, COALESCE(SUM(estimated_bytes), 0) AS estBytes FROM logs WHERE ts >= ?").get(fromTs); logEvents = r.logEvents; estBytes = r.estBytes; } finally { dbL.close(); } }
-  
-  const rem = limit.limitTokens === null ? null : Math.max(limit.limitTokens - usedTokens, 0);
-  const per = limit.limitTokens === null ? null : Math.min(100, +(usedTokens / limit.limitTokens * 100).toFixed(1));
-  return { key, label, window, from: new Date(fromTs * 1000).toISOString(), to: nowIso, usedTokens, limitTokens: limit.limitTokens, remainingTokens: rem, percentUsed: per, status: limit.limitTokens === null ? 'unconfigured' : rem <= 0 ? 'exhausted' : per >= 85 ? 'warning' : 'ok', sessions, logEvents, estimatedBytes: estBytes };
-}
-
-function buildUsageSummary() {
-  const now = Math.floor(Date.now() / 1000), iso = new Date().toISOString();
-  const limits = readUsageLimitSettings();
-  return {
-    source: {
-      type: 'local-codex-sqlite',
-      threads: checkSqliteAvailability('state_5.sqlite'),
-      logs: checkSqliteAvailability('logs_2.sqlite')
-    },
-    rateLimits: buildCodexRateLimitSummary(),
-    refreshedAt: iso,
-    periods: {
-      daily: buildUsagePeriod({ key: 'daily', label: 'Daily', window: 'rolling_24h', days: 1, limit: limits.daily, nowSeconds: now, nowIso: iso }),
-      weekly: buildUsagePeriod({ key: 'weekly', label: 'Weekly', window: 'rolling_7d', days: 7, limit: limits.weekly, nowSeconds: now, nowIso: iso })
-    }
-  };
-}
-
-// --- Health ---
-function statSourceFile(fileName) {
-  return statFile(fileName);
-}
-
-function buildHealthSummary() {
-  const codexHomeExists = fs.existsSync(CODEX_DIR);
-  const codexHomeReadable = codexHomeExists && canReadPath(CODEX_DIR);
-  const sourceFiles = [...Object.values(dashboardFiles), ...jsonlFiles].map(statSourceFile);
-  const databaseFiles = sqliteFiles.map(checkSqliteAvailability);
-  const sourceCounts = sourceFiles.reduce((acc, file) => {
-    acc.total += 1;
-    acc.existing += file.exists ? 1 : 0;
-    acc.missing += file.exists ? 0 : 1;
-    acc.readable += file.readable ? 1 : 0;
-    return acc;
-  }, { total: 0, existing: 0, missing: 0, readable: 0 });
-  const databaseCounts = databaseFiles.reduce((acc, file) => {
-    acc.total += 1;
-    acc.available += file.available ? 1 : 0;
-    acc.missing += file.exists ? 0 : 1;
-    acc.errored += file.exists && !file.available ? 1 : 0;
-    return acc;
-  }, { total: 0, available: 0, missing: 0, errored: 0 });
-  const ok = codexHomeReadable && databaseCounts.available === databaseCounts.total;
-
-  return {
-    ok,
-    status: ok ? 'healthy' : 'degraded',
-    codexHome: CODEX_DIR,
-    codexHomeExists,
-    codexHomeReadable,
-    refreshedAt: new Date().toISOString(),
-    runtime: { node: process.version, platform: `${os.type()} ${os.release()}`, pid: process.pid },
-    sources: { ...sourceCounts, files: sourceFiles },
-    databases: { ...databaseCounts, files: databaseFiles }
-  };
-}
-
 // --- Analytics ---
 function readThreadTrend(days) {
   const buckets = buildUtcDayBuckets(days);
@@ -415,26 +273,87 @@ function buildAnalyticsPayload(options = {}) {
 
 // --- System ---
 function buildSystemSummary(profile) {
-  const t = readThreadStats(); const l = readLogStats();
+  return buildBaseSystemSummary({
+    profile,
+    threadStats: readThreadStats(),
+    logStats: readLogStats()
+  });
+}
+
+function buildOrchestrationPayload() {
+  const agents = readAgents();
+  const threads = readThreads(100);
+  const enrichedAgents = agents.map((agent) => {
+    const identity = getAgentIdentitySet(agent);
+    const matchedThreads = threads.filter((thread) => threadMatchesAgent(thread, identity));
+    return {
+      ...agent,
+      status: matchedThreads.length > 0 ? 'recent' : 'configured',
+      metrics: {
+        threadCount: matchedThreads.length,
+        skillCount: Array.isArray(agent.skills) ? agent.skills.length : 0
+      }
+    };
+  });
+  const edges = enrichedAgents.flatMap((agent) => {
+    const identity = getAgentIdentitySet(agent);
+    return threads
+      .filter((thread) => threadMatchesAgent(thread, identity))
+      .slice(0, 5)
+      .map((thread) => ({
+        id: `${agent.id}:${thread.id}`,
+        from: agent.id,
+        to: thread.id,
+        label: thread.title || thread.id,
+        type: 'agent-thread',
+        updatedAtIso: thread.updatedAtIso
+      }));
+  });
+  const configuredAgents = enrichedAgents.filter((agent) => agent.status !== 'recent');
+
   return {
-    node: process.version,
-    platform: `${os.type()} ${os.release()}`,
-    codexHome: CODEX_DIR,
-    threadStats: t,
-    logStats: l,
-    activeModel: profile?.model || null,
-    activeApprovalMode: profile?.approvalMode || null,
-    sourceFiles: [...Object.values(dashboardFiles), ...jsonlFiles].map(statSourceFile),
-    databaseFiles: sqliteFiles.map(checkSqliteAvailability)
+    agents: enrichedAgents,
+    lanes: [
+      {
+        id: 'recent-agents',
+        label: 'Recently active agents',
+        agents: enrichedAgents.filter((agent) => agent.status === 'recent')
+      },
+      {
+        id: 'configured-agents',
+        label: 'Configured agents',
+        agents: configuredAgents
+      },
+      {
+        id: 'recent-threads',
+        label: 'Recent sessions',
+        threads: threads.slice(0, 12)
+      }
+    ],
+    edges,
+    stats: {
+      agents: enrichedAgents.length,
+      recentlyActiveAgents: enrichedAgents.filter((agent) => agent.status === 'recent').length,
+      skills: enrichedAgents.reduce((count, agent) => count + (Array.isArray(agent.skills) ? agent.skills.length : 0), 0),
+      links: edges.length,
+      agentSessions: edges.length
+    },
+    source: {
+      agents: enrichedAgents[0]?.sourcePath ? statPath('agents', enrichedAgents[0].sourcePath) : statSourceFile(dashboardFiles.agents),
+      agentSessions: statSourceFile(dashboardFiles.agentSessions),
+      threads: checkSqliteAvailability('state_5.sqlite')
+    },
+    refreshedAt: new Date().toISOString()
   };
 }
 
 // --- Summary ---
 function buildSummary() {
   const agents = readAgents(); const threads = readThreads(24); const activity = readRecentLogs(32);
+  const capabilities = buildCapabilitiesPayload();
   const config = readJsonFile(path.join(CODEX_DIR, dashboardFiles.config), { profiles: [] });
   const activeProfile = config.profiles?.find(p => p.id === config.activeProfileId) || null;
-  return { refreshedAt: new Date().toISOString(), agents, threads, activity, health: buildHealthSummary(), usage: buildUsageSummary(), system: buildSystemSummary(activeProfile), counts: { agents: agents.length, threads: threads.length, logs: activity.length } };
+  return { refreshedAt: new Date().toISOString(), agents, threads, activity, health: buildHealthSummary(), usage: buildUsageSummary(), system: buildSystemSummary(activeProfile), counts: { agents: agents.length, skills: capabilities.stats.skills, threads: threads.length, logs: activity.length } };
 }
 
 function readPackageJson(relativePath) {
@@ -682,7 +601,7 @@ function buildAgentDetailPayload(agent) {
     agent,
     threads,
     metrics: { threadCount: threads.length, skillCount: Array.isArray(agent.skills) ? agent.skills.length : 0 },
-    source: statSourceFile(dashboardFiles.agents),
+    source: agent.sourcePath ? statPath(agent.name || agent.id, agent.sourcePath) : statSourceFile(dashboardFiles.agents),
     refreshedAt: new Date().toISOString()
   };
 }
@@ -697,5 +616,5 @@ function buildSessionDetailPayload(thread) {
 }
 
 module.exports = {
-  readAgents, readThreads, readThreadById, readThreadStats, readRecentLogs, countRecentLogs, readWorkspaces, readUsageLimitSettings, readLogStats, buildSummary, buildHealthSummary, buildAnalyticsPayload, buildSystemSummary, buildOrchestrationPayload: () => ({ agents: [], lanes: [], edges: [] }), buildCapabilitiesPayload: () => ({ skills: [], plugins: [] }), buildProfilesPayload, buildDiagnosticReportPayload, buildReleaseHealth, inspectSqlite, readDatabaseTable, buildConfigPreviewPayload, buildAgentDetailPayload, buildSessionDetailPayload
+  readAgents, readThreads, readThreadById, readThreadStats, readRecentLogs, countRecentLogs, readWorkspaces, readUsageLimitSettings, readLogStats, buildSummary, buildHealthSummary, buildAnalyticsPayload, buildSystemSummary, buildOrchestrationPayload, buildCapabilitiesPayload, buildProfilesPayload, buildDiagnosticReportPayload, buildReleaseHealth, inspectSqlite, readDatabaseTable, buildConfigPreviewPayload, buildAgentDetailPayload, buildSessionDetailPayload
 };

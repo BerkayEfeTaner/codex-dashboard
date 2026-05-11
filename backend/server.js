@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { PORT, CODEX_DIR, sqliteFiles, dashboardFiles } = require('./constants');
+const { PORT, CORS_ORIGINS, CODEX_DIR, sqliteFiles } = require('./constants');
 const { clampLimit, clampOffset, statFile } = require('./utils');
 const { 
   readAgents, 
@@ -29,7 +29,7 @@ const {
 const app = express();
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174']
+  origin: CORS_ORIGINS
 }));
 
 app.use((req, res, next) => {

@@ -8,14 +8,16 @@ The dashboard is read-only at the MVP stage. Missing, unreadable, or malformed s
 
 | Source | Type | Current Usage | Expected Fallback |
 | --- | --- | --- | --- |
-| `dashboard-agents.json` | JSON | Agent list, teams, model distribution | Empty agent list |
+| `.codex/agents/*.toml`, `~/.codex/agents/*.toml` | TOML | Official Codex custom subagent catalog | Empty subagent list or profile-note fallback |
+| `~/.codex/agents/*.md` | Markdown | Local role/profile notes fallback when no TOML subagents exist | Empty profile-note list |
+| `dashboard-agents.json` | JSON | Legacy fallback catalog only; not the primary Codex subagent source | Empty fallback list |
 | `dashboard-config.json` | JSON | Profiles, active profile, and config preview source | Empty profile list, no active profile, blocked preview apply |
 | `dashboard-agent-sessions.json` | JSON | Agent session count and orchestration session links | Empty session count |
 | `dashboard-review-history.json` | JSON | Review history count | Empty review history |
 | `version.json` | JSON | Codex version metadata | Empty object |
 | `history.jsonl` | JSONL | Recent history preview | Empty list |
 | `session_index.jsonl` | JSONL | Session index preview | Empty list |
-| `skills/**/SKILL.md` | Markdown/frontmatter | Capability skill catalog | Empty skill list |
+| `.codex/skills/**/SKILL.md`, `~/.codex/skills/**/SKILL.md` | Markdown/frontmatter | Official Codex skill catalog | Empty skill list |
 | `.tmp/plugins/plugins/**/.codex-plugin/plugin.json` | JSON | Plugin manifest catalog | Empty plugin list |
 | `.tmp/plugins/.agents/plugins/marketplace.json` | JSON | Plugin marketplace policy and category metadata | Local-only plugin metadata |
 | `sessions/**/*.jsonl` | JSONL | Codex `token_count.rate_limits` events for 5-hour and weekly account-limit percentages | Usage Limits shows rate limits unavailable |
@@ -35,14 +37,12 @@ The dashboard is read-only at the MVP stage. Missing, unreadable, or malformed s
 
 | Field | Derived From | Notes |
 | --- | --- | --- |
-| `teams` | `dashboard-agents.json` | Grouped by `team` |
-| `models` | `dashboard-agents.json` | Grouped by `model` |
-| `counts` | Agents, config, sessions, review history, thread stats, log stats | Used by Overview |
+| `counts` | Subagents/profile notes, skills, config, sessions, review history, thread stats, log stats | Used by Overview |
 | `system.threadStats` | `state_5.sqlite` | Total, active, archived, by model, by approval, by sandbox |
 | `system.logStats` | `logs_2.sqlite` | Total, by level, recent targets |
 | `databases` | SQLite file inspection | Includes file status, table list, row counts, columns |
-| `orchestration` | Agents, agent sessions, recent threads | Read-only lanes, links, unmapped threads, and source status |
-| `capabilities` | Skill files and plugin manifests | Read-only skill/plugin inventory, category counts, policy summaries, and source status |
+| `orchestration` | Agents, agent sessions, recent threads | Read-only operating map from TOML/profile discovery and local thread links |
+| `capabilities` | Official skill files and plugin manifests | Read-only skill/plugin inventory, category counts, policy summaries, and source status |
 | `configPreview` | `dashboard-config.json` plus draft payload | Read-only diff, validation checks, unsupported fields, and blocked apply state |
 | `diagnosticReport` | Health, config validation, system stats, capabilities, orchestration, capped recent history | Read-only export package for support, audits, and release checks |
 | `analyticsTrends` | `state_5.sqlite`, `logs_2.sqlite` | UTC day buckets, totals, averages, and capped model/target/level distributions |
@@ -58,9 +58,8 @@ The dashboard is read-only at the MVP stage. Missing, unreadable, or malformed s
 | Overview | `/api/summary` | Keep summary compact; move heavy lists to dedicated endpoints |
 | Analytics | `/api/analytics/trends` | Keep trends separate from summary; add future filters through query params |
 | Workspaces | `/api/workspaces` | Keep workspace grouping separate from summary; add filters before exposing larger history windows |
-| Agents | `/api/agents`, `/api/agents/:id` | Keep list compact; grow details through the detail endpoint |
-| Orchestration | `/api/orchestration` | Keep links capped; add mutation workflows only after preview/rollback design |
-| Capabilities | `/api/capabilities` | Keep inventory read-only; add install/update/delete only after preview, validation, audit, and rollback design |
+| Subagents | `/api/agents`, `/api/agents/:id` | Keep list compact; read official TOML subagents before local fallback notes |
+| Skills | `/api/capabilities` | Keep inventory read-only; add install/update/delete only after preview, validation, audit, and rollback design |
 | Activity | `/api/activity` | Keep backend-side filters and pagination before adding saved views |
 | Profiles | `/api/profiles`, `/api/config/preview` | Keep apply disabled until preview, validation, audit, backup, and rollback contracts are complete |
 | Databases | `/api/databases`, `/api/databases/:name/tables/:table` | Keep DB summaries compact; load rows through paginated table detail |

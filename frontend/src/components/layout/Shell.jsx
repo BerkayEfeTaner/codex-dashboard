@@ -7,7 +7,6 @@ import {
   FolderGit2,
   Gauge,
   GitBranch,
-  Network,
   PackageCheck,
   Puzzle,
   RefreshCw,
@@ -17,19 +16,38 @@ import {
 } from 'lucide-react';
 import { InlineError } from '../ui/InlineError.jsx';
 
-const navItems = [
-  { to: '/dashboard', label: 'Overview', icon: Gauge },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/workspaces', label: 'Workspaces', icon: FolderGit2 },
-  { to: '/agents', label: 'Agents', icon: Bot },
-  { to: '/orchestration', label: 'Orchestration', icon: Network },
-  { to: '/capabilities', label: 'Capabilities', icon: Puzzle },
-  { to: '/activity', label: 'Activity', icon: TerminalSquare },
-  { to: '/profiles', label: 'Profiles', icon: Settings },
-  { to: '/databases', label: 'Databases', icon: Database },
-  { to: '/sessions', label: 'Sessions', icon: GitBranch },
-  { to: '/system', label: 'System', icon: ShieldCheck },
-  { to: '/release', label: 'Release', icon: PackageCheck }
+const navGroups = [
+  {
+    label: 'Monitor',
+    items: [
+      { to: '/dashboard', label: 'Overview', icon: Gauge },
+      { to: '/activity', label: 'Activity', icon: TerminalSquare },
+      { to: '/analytics', label: 'Analytics', icon: BarChart3 }
+    ]
+  },
+  {
+    label: 'Workspace',
+    items: [
+      { to: '/workspaces', label: 'Workspaces', icon: FolderGit2 },
+      { to: '/sessions', label: 'Sessions', icon: GitBranch }
+    ]
+  },
+  {
+    label: 'Codex',
+    items: [
+      { to: '/agents', label: 'Subagents', icon: Bot },
+      { to: '/capabilities', label: 'Skills', icon: Puzzle }
+    ]
+  },
+  {
+    label: 'System',
+    items: [
+      { to: '/databases', label: 'Databases', icon: Database },
+      { to: '/profiles', label: 'Profiles', icon: Settings },
+      { to: '/system', label: 'System', icon: ShieldCheck },
+      { to: '/release', label: 'Release', icon: PackageCheck }
+    ]
+  }
 ];
 
 export function Shell({ summary, loading, refreshing, error, reload, children }) {
@@ -44,13 +62,18 @@ export function Shell({ summary, loading, refreshing, error, reload, children })
           </div>
         </div>
         <Nav tag="nav" aria-label="Dashboard navigation" className="dashboard-nav">
-          {navItems.map((item) => (
-            <NavItem key={item.to}>
-              <NavLink to={item.to}>
-                <item.icon size={18} aria-hidden="true" />
-                <span>{item.label}</span>
-              </NavLink>
-            </NavItem>
+          {navGroups.map((group) => (
+            <div className="nav-group" key={group.label}>
+              <span className="nav-group-label">{group.label}</span>
+              {group.items.map((item) => (
+                <NavItem key={item.to}>
+                  <NavLink to={item.to}>
+                    <item.icon size={18} aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                </NavItem>
+              ))}
+            </div>
           ))}
         </Nav>
       </aside>

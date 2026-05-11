@@ -1,28 +1,20 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import OverviewPage from './OverviewPage.jsx';
-
-vi.mock('recharts', () => ({
-  Bar: () => null,
-  BarChart: ({ children }) => <div>{children}</div>,
-  CartesianGrid: () => null,
-  ResponsiveContainer: ({ children }) => <div>{children}</div>,
-  Tooltip: () => null,
-  XAxis: () => null,
-  YAxis: () => null
-}));
 
 const summary = {
   codexHome: 'C:\\Users\\sezer\\.codex',
   refreshedAt: '2026-05-08T12:00:00.000Z',
   counts: {
     agents: 2,
-    teams: 1,
+    skills: 12,
     threads: 4,
     logs: 128
   },
-  teams: { core: 2 },
-  models: { 'gpt-5.5': 2 },
+  agents: [
+    { id: 'global-reviewer', type: 'subagent', scope: 'global', source: 'codex-subagent-toml' },
+    { id: 'global-planner', type: 'subagent', scope: 'global', source: 'codex-subagent-toml' }
+  ],
   health: {
     ok: true,
     status: 'healthy',
@@ -101,5 +93,30 @@ describe('OverviewPage', () => {
     expect(within(usagePanel).getByText('Weekly')).toBeInTheDocument();
     expect(within(usagePanel).getAllByText('53%').length).toBeGreaterThan(0);
     expect(within(usagePanel).getAllByText('36%').length).toBeGreaterThan(0);
+  });
+
+  it('does not show stale expired limits as current health', () => {
+    const staleSummary = {
+      ...summary,
+      usage: {
+        ...summary.usage,
+        rateLimits: {
+          ...summary.usage.rateLimits,
+          primary: {
+            ...summary.usage.rateLimits.primary,
+            stale: true,
+            status: 'stale',
+            remainingPercent: 0
+          }
+        }
+      }
+    };
+
+    render(<OverviewPage summary={staleSummary} loading={false} />);
+
+    const usagePanel = screen.getByRole('heading', { name: 'Usage Limits' }).closest('section');
+
+    expect(within(usagePanel).getByText('awaiting update')).toBeInTheDocument();
+    expect(within(usagePanel).getByText('Awaiting update')).toBeInTheDocument();
   });
 });

@@ -62,9 +62,7 @@ Top-level fields:
 | `version` | object | Parsed `version.json` |
 | `activeProfile` | object/null | Active profile from config |
 | `profiles` | array | Profile list |
-| `agents` | array | Agent list |
-| `teams` | object | Agent count by team |
-| `models` | object | Agent count by model |
+| `agents` | array | Codex subagent list, or local profile-note fallback records when no TOML subagents exist |
 | `files` | array | File status objects |
 | `databases` | array | Inspected SQLite database summaries |
 | `threads` | array | Recent Codex threads |
@@ -82,7 +80,7 @@ Important nested shapes:
 {
   "counts": {
     "agents": 0,
-    "teams": 0,
+    "skills": 0,
     "profiles": 0,
     "agentSessions": 0,
     "reviewHistory": 0,
@@ -179,16 +177,23 @@ Rules:
 
 ## `GET /api/agents`
 
-Purpose: Agent list.
+Purpose: Codex subagent list. The endpoint also exposes local profile-note fallback records when no official TOML subagents exist, so the UI can explain what was found instead of inventing agents.
 
 Current response:
 
 ```json
 [
   {
-    "name": "Example Agent",
-    "team": "dev-team",
-    "model": "gpt-5.4"
+    "id": "global-reviewer",
+    "name": "Reviewer",
+    "type": "subagent",
+    "scope": "global",
+    "source": "codex-subagent-toml",
+    "sourcePath": "C:\\Users\\sezer\\.codex\\agents\\reviewer.toml",
+    "model": "gpt-5.4",
+    "reasoningEffort": "medium",
+    "tools": [],
+    "skills": []
   }
 ]
 ```
@@ -197,8 +202,8 @@ Rules:
 
 - Returns an array.
 - `id` is the stable route identifier for detail requests.
-- If a source record has no `id`, the backend derives one from team and name.
-- Missing agent source returns `[]`.
+- Source priority is project `.codex/agents/*.toml`, global `~/.codex/agents/*.toml`, global `~/.codex/agents/*.md` fallback profile notes, then legacy `dashboard-agents.json`.
+- Missing subagent/profile sources return `[]`.
 - Detail view must use `/api/agents/:id` instead of expanding the list response with heavy fields later.
 
 ## `GET /api/agents/:id`
@@ -212,14 +217,17 @@ Current response:
   "agent": {
     "id": "ai-ops-team-team-lead",
     "name": "Team Lead",
+    "type": "subagent",
+    "scope": "global",
+    "source": "codex-subagent-toml",
     "team": "ai-ops-team",
     "model": "gpt-5.4",
     "reasoningEffort": "medium",
     "skills": []
   },
   "source": {
-    "name": "dashboard-agents.json",
-    "path": "C:\\Users\\sezer\\.codex\\dashboard-agents.json",
+    "name": "reviewer.toml",
+    "path": "C:\\Users\\sezer\\.codex\\agents\\reviewer.toml",
     "exists": true,
     "readable": true,
     "size": 12345,
@@ -250,7 +258,7 @@ Rules:
 
 ## `GET /api/orchestration`
 
-Purpose: Read-only agent operating map that connects configured agents, detected agent sessions, and recent Codex threads.
+Purpose: Read-only operating map derived from local Codex subagent discovery and recent thread data.
 
 Current response:
 
@@ -294,8 +302,8 @@ Current response:
 Rules:
 
 - This endpoint is read-only and must not start, stop, or mutate agents.
-- The agent list is derived from `dashboard-agents.json`.
-- Agent sessions are derived from `dashboard-agent-sessions.json`.
+- The agent list must use the same source priority as `/api/agents`.
+- Agent session source status is reported from `dashboard-agent-sessions.json`.
 - Thread links are derived from recent rows in `state_5.sqlite` and capped so the route stays suitable for UI loading.
 - `lanes` and `edges` are presentation-ready summaries; the raw source files remain available through `source`.
 
@@ -314,7 +322,6 @@ Current response:
       "description": "Code quality workflow",
       "scope": "user",
       "path": "C:\\Users\\sezer\\.codex\\skills\\clean-code",
-      "hasAgents": false,
       "hasAssets": false,
       "hasScripts": false,
       "hasReferences": false,
@@ -364,8 +371,8 @@ Current response:
 Rules:
 
 - This endpoint is read-only and must not install, update, delete, or enable skills/plugins.
-- Skill data is derived from immediate `skills/*/SKILL.md` entries and `.system/*/SKILL.md` entries.
-- Plugin data is derived from immediate cached plugin manifests under `.tmp/plugins/plugins/*/.codex-plugin/plugin.json`.
+- Skill data is derived from recursive project `.codex/skills/**/SKILL.md` and global `~/.codex/skills/**/SKILL.md` entries.
+- Plugin data is derived from cached plugin manifests under `.tmp/plugins` when available.
 - Marketplace metadata is joined from `.tmp/plugins/.agents/plugins/marketplace.json` when available.
 - Inventory arrays are capped so the route stays suitable for UI loading.
 

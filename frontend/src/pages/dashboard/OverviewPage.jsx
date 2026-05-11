@@ -1,15 +1,6 @@
 import { createElement } from 'react';
-import { Activity, Bot, CalendarDays, Database, FileText, Gauge, GitBranch, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Bot, CalendarDays, Database, FileText, Gauge, GitBranch, Layers3, ShieldCheck } from 'lucide-react';
 import { Badge } from 'reactstrap';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from 'recharts';
 import { Detail } from '../../components/ui/Detail.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
@@ -27,6 +18,7 @@ function usageLabel(status) {
   if (status === 'ok') return 'on track';
   if (status === 'warning') return 'watch';
   if (status === 'exhausted') return 'exhausted';
+  if (status === 'stale') return 'awaiting update';
   if (status === 'unknown') return 'unknown';
   return 'not configured';
 }
@@ -47,7 +39,9 @@ function formatWindowMinutes(minutes) {
 
 function RateLimitCard({ title, icon: Icon, limit }) {
   const remainingPercent = limit?.remainingPercent ?? 0;
-  const hasData = limit?.usedPercent !== null && limit?.usedPercent !== undefined;
+  const hasData = !limit?.stale && limit?.usedPercent !== null && limit?.usedPercent !== undefined;
+  const meterPercent = hasData ? Math.min(Math.max(remainingPercent, 0), 100) : 100;
+  const valueLabel = hasData ? formatPercent(limit.remainingPercent) : limit?.stale ? 'Awaiting update' : 'Unavailable';
 
   return (
     <div className="usage-limit-card">
@@ -63,10 +57,10 @@ function RateLimitCard({ title, icon: Icon, limit }) {
       </div>
       <div className="usage-limit-value">
         <span>Remaining</span>
-        <strong>{hasData ? formatPercent(limit.remainingPercent) : 'Unavailable'}</strong>
+        <strong>{valueLabel}</strong>
       </div>
-      <div className="usage-meter usage-meter-remaining" aria-label={`${title} remaining rate limit`}>
-        <span style={{ width: `${Math.min(Math.max(remainingPercent, 0), 100)}%` }} />
+      <div className={`usage-meter ${hasData ? 'usage-meter-remaining' : 'usage-meter-empty'}`} aria-label={`${title} remaining rate limit`}>
+        <span style={{ width: `${meterPercent}%` }} />
       </div>
       <div className="usage-limit-metrics">
         <div>
@@ -75,7 +69,7 @@ function RateLimitCard({ title, icon: Icon, limit }) {
         </div>
         <div>
           <span>Remaining</span>
-          <strong>{formatPercent(limit?.remainingPercent)}</strong>
+          <strong>{hasData ? formatPercent(limit?.remainingPercent) : '-'}</strong>
         </div>
         <div>
           <span>Window</span>
@@ -92,8 +86,11 @@ function RateLimitCard({ title, icon: Icon, limit }) {
 }
 
 export default function OverviewPage({ summary, loading }) {
-  const teams = Object.entries(summary?.teams || {}).map(([name, count]) => ({ name, count }));
-  const models = Object.entries(summary?.models || {}).map(([name, count]) => ({ name, count }));
+  const sourceTypes = (summary?.agents || []).reduce((acc, agent) => {
+    const key = agent.type || agent.source || 'unknown';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
   const health = summary?.health;
   const usage = summary?.usage;
   const rateLimits = usage?.rateLimits;
@@ -112,8 +109,8 @@ export default function OverviewPage({ summary, loading }) {
       />
 
       <section className="stat-grid">
-        <StatCard label="Agents" value={summary?.counts.agents || 0} icon={Bot} />
-        <StatCard label="Teams" value={summary?.counts.teams || 0} icon={Users} />
+        <StatCard label="Subagents" value={summary?.counts.agents || 0} icon={Bot} />
+        <StatCard label="Skills" value={summary?.counts.skills || 0} icon={Layers3} />
         <StatCard label="Threads" value={summary?.counts.threads || 0} icon={GitBranch} />
         <StatCard label="Log Events" value={formatCompact(summary?.counts.logs || 0)} icon={Activity} />
       </section>
@@ -128,8 +125,8 @@ export default function OverviewPage({ summary, loading }) {
           }}
         />
         <div className="usage-limit-grid">
-          <RateLimitCard title="5-Hour" icon={Gauge} limit={{ ...rateLimits?.primary, updatedAt: rateLimits?.updatedAt }} />
-          <RateLimitCard title="Weekly" icon={CalendarDays} limit={{ ...rateLimits?.secondary, updatedAt: rateLimits?.updatedAt }} />
+          <RateLimitCard title="5-Hour" icon={Gauge} limit={rateLimits?.primary ? { ...rateLimits.primary, updatedAt: rateLimits?.updatedAt } : null} />
+          <RateLimitCard title="Weekly" icon={CalendarDays} limit={rateLimits?.secondary ? { ...rateLimits.secondary, updatedAt: rateLimits?.updatedAt } : null} />
         </div>
       </section>
 
@@ -192,25 +189,6 @@ export default function OverviewPage({ summary, loading }) {
         )}
       </section>
 
-      <section className="panel wide">
-        <PageHeader
-          title="Teams"
-          subtitle="Agent distribution by team"
-          status={{ label: `Updated ${formatDate(summary?.refreshedAt)}`, tone: 'ok' }}
-        />
-        <div className="chart-wrap">
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={teams}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="count" fill="#0f766e" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
-
       <section className="panel">
         <h2>Active Profile</h2>
         <div className="detail-list">
@@ -236,14 +214,14 @@ export default function OverviewPage({ summary, loading }) {
       </section>
 
       <section className="panel">
-        <h2>Models</h2>
+        <h2>Subagent Sources</h2>
         <div className="compact-list">
-          {models.length === 0 ? (
-            <EmptyState title="No model data" description="Agent model usage will appear when agents are available." />
-          ) : models.map((model) => (
-            <div className="compact-row" key={model.name}>
-              <strong>{model.name}</strong>
-              <span>{model.count} agents</span>
+          {Object.keys(sourceTypes).length === 0 ? (
+            <EmptyState title="No source data" description="Codex subagent source types will appear when records are available." />
+          ) : Object.entries(sourceTypes).map(([source, count]) => (
+            <div className="compact-row" key={source}>
+              <strong>{source}</strong>
+              <span>{count} records</span>
             </div>
           ))}
         </div>

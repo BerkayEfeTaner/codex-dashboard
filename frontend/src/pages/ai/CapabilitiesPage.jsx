@@ -35,7 +35,6 @@ function SkillCard({ skill }) {
       </div>
       <div className="capability-meta">
         {skill.hasScripts && <span>scripts</span>}
-        {skill.hasAgents && <span>agents</span>}
         {skill.hasAssets && <span>assets</span>}
         {skill.hasReferences && <span>references</span>}
         <span>{formatDate(skill.modifiedAt)}</span>
@@ -100,8 +99,8 @@ export default function CapabilitiesPage() {
   return (
     <div className="page-grid capabilities-page">
       <PageHeader
-        title="Capabilities"
-        subtitle={loading ? 'Loading capabilities...' : `Refreshed ${formatDate(data?.refreshedAt)}`}
+        title="Skills"
+        subtitle={loading ? 'Loading Codex skills...' : `Refreshed ${formatDate(data?.refreshedAt)}`}
         status={<span className="pill">Read-only</span>}
       />
       <InlineError message={error} />
@@ -119,8 +118,8 @@ export default function CapabilitiesPage() {
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search skills and plugins"
-            aria-label="Search capabilities"
+            placeholder="Search skills and plugin manifests"
+            aria-label="Search skills and plugin manifests"
           />
         </div>
       </section>
@@ -165,12 +164,13 @@ export default function CapabilitiesPage() {
         <div className="panel-header">
           <div>
             <span className="eyebrow">Sources</span>
-            <h2>Capability inputs</h2>
+              <h2>Skill inputs</h2>
           </div>
           <ShieldCheck size={18} aria-hidden="true" />
         </div>
         <div className="source-grid">
           <SourceRow label="Skills" source={data?.source?.skillsDirectory} />
+          <SourceRow label="Project skills" source={data?.source?.projectSkillsDirectory} />
           <SourceRow label="Plugin cache" source={data?.source?.pluginCache} />
           <SourceRow label="Plugin manifests" source={data?.source?.pluginManifests} />
           <SourceRow label="Marketplace" source={data?.source?.marketplace} />
