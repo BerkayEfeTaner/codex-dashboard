@@ -1,20 +1,20 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { Shell } from './components/Shell.jsx';
+import { Shell } from './components/layout/Shell.jsx';
 import { useSummary } from './hooks/useSummary.js';
 
-const OverviewPage = lazy(() => import('./pages/OverviewPage.jsx'));
-const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx'));
-const WorkspacesPage = lazy(() => import('./pages/WorkspacesPage.jsx'));
-const AgentsPage = lazy(() => import('./pages/AgentsPage.jsx'));
-const OrchestrationPage = lazy(() => import('./pages/OrchestrationPage.jsx'));
-const CapabilitiesPage = lazy(() => import('./pages/CapabilitiesPage.jsx'));
-const ActivityPage = lazy(() => import('./pages/ActivityPage.jsx'));
-const ProfilesPage = lazy(() => import('./pages/ProfilesPage.jsx'));
-const DatabasesPage = lazy(() => import('./pages/DatabasesPage.jsx'));
-const SessionsPage = lazy(() => import('./pages/SessionsPage.jsx'));
-const SystemPage = lazy(() => import('./pages/SystemPage.jsx'));
-const ReleasePage = lazy(() => import('./pages/ReleasePage.jsx'));
+const OverviewPage = lazy(() => import('./pages/dashboard/OverviewPage.jsx'));
+const AnalyticsPage = lazy(() => import('./pages/data/AnalyticsPage.jsx'));
+const WorkspacesPage = lazy(() => import('./pages/data/WorkspacesPage.jsx'));
+const AgentsPage = lazy(() => import('./pages/ai/AgentsPage.jsx'));
+const OrchestrationPage = lazy(() => import('./pages/ai/OrchestrationPage.jsx'));
+const CapabilitiesPage = lazy(() => import('./pages/ai/CapabilitiesPage.jsx'));
+const ActivityPage = lazy(() => import('./pages/data/ActivityPage.jsx'));
+const ProfilesPage = lazy(() => import('./pages/admin/ProfilesPage.jsx'));
+const DatabasesPage = lazy(() => import('./pages/data/DatabasesPage.jsx'));
+const SessionsPage = lazy(() => import('./pages/data/SessionsPage.jsx'));
+const SystemPage = lazy(() => import('./pages/admin/SystemPage.jsx'));
+const ReleasePage = lazy(() => import('./pages/admin/ReleasePage.jsx'));
 
 function PageLoader() {
   return <div className="panel">Loading page...</div>;

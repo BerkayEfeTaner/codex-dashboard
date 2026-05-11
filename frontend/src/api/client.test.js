@@ -19,7 +19,7 @@ describe('api client', () => {
     mockFetch(payload);
 
     await expect(fetchReleaseHealth()).resolves.toEqual(payload);
-    expect(fetch).toHaveBeenCalledWith('/api/release/health', undefined);
+    expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/^\/api\/release\/health\?_=\d+$/), { cache: 'no-store' });
   });
 
   it('encodes session detail ids before building the URL', async () => {
@@ -27,7 +27,7 @@ describe('api client', () => {
 
     await fetchSessionDetail('session 1/2');
 
-    expect(fetch).toHaveBeenCalledWith('/api/sessions/session%201%2F2', undefined);
+    expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/^\/api\/sessions\/session%201%2F2\?_=\d+$/), { cache: 'no-store' });
   });
 
   it('throws on non-2xx responses', async () => {
