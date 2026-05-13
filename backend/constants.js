@@ -50,6 +50,5 @@ module.exports = {
     version: 'version.json'
   },
   
-  sqliteFiles: ['logs_2.sqlite', 'state_5.sqlite'],
   jsonlFiles: ['history.jsonl', 'session_index.jsonl']
 };

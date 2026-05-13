@@ -31,8 +31,6 @@ The backend smoke check validates the shape and availability of:
 - `GET /api/sessions`
 - `GET /api/sessions/:id` when session records exist
 - `GET /api/activity`
-- `GET /api/databases`
-- `GET /api/databases/:name/tables/:table` when readable tables exist
 - `GET /api/system`
 - `GET /api/release/health`
 
@@ -44,7 +42,7 @@ The backend smoke check validates the shape and availability of:
 ## Release Risks
 
 - The app reads local files from `CODEX_HOME`; empty or missing sources must degrade to empty states instead of crashes.
-- SQLite tables can grow quickly; list endpoints need limits or pagination before UI exposure.
+- SQLite-backed session and activity endpoints need limits or pagination before UI exposure.
 - Frontend charts and Bootstrap dependencies affect bundle size; review `dist/bundle-report.html` after dependency-heavy changes.
 - The MVP is read-only; write actions require a separate preview, validation, audit, and rollback design.
 

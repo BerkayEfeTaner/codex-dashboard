@@ -26,7 +26,7 @@ The dashboard is read-only at the MVP stage. Missing, unreadable, or malformed s
 | `backend/scripts/smoke-check.mjs` | JavaScript | API smoke endpoint inventory | Empty smoke endpoint list |
 | `docs/RELEASE_CHECKLIST.md` | Markdown | Release readiness source status | Missing checklist warning |
 
-## SQLite Databases
+## Internal SQLite Sources
 
 | Source | Current Tables Used | Current Usage | Expected Fallback |
 | --- | --- | --- | --- |
@@ -40,7 +40,6 @@ The dashboard is read-only at the MVP stage. Missing, unreadable, or malformed s
 | `counts` | Subagents/profile notes, skills, config, sessions, review history, thread stats, log stats | Used by Overview |
 | `system.threadStats` | `state_5.sqlite` | Total, active, archived, by model, by approval, by sandbox |
 | `system.logStats` | `logs_2.sqlite` | Total, by level, recent targets |
-| `databases` | SQLite file inspection | Includes file status, table list, row counts, columns |
 | `orchestration` | Agents, agent sessions, recent threads | Read-only operating map from TOML/profile discovery and local thread links |
 | `capabilities` | Official skill files and plugin manifests | Read-only skill/plugin inventory, category counts, policy summaries, and source status |
 | `configPreview` | `dashboard-config.json` plus draft payload | Read-only diff, validation checks, unsupported fields, and blocked apply state |
@@ -62,7 +61,6 @@ The dashboard is read-only at the MVP stage. Missing, unreadable, or malformed s
 | Skills | `/api/capabilities` | Keep inventory read-only; add install/update/delete only after preview, validation, audit, and rollback design |
 | Activity | `/api/activity` | Keep backend-side filters and pagination before adding saved views |
 | Profiles | `/api/profiles`, `/api/config/preview` | Keep apply disabled until preview, validation, audit, backup, and rollback contracts are complete |
-| Databases | `/api/databases`, `/api/databases/:name/tables/:table` | Keep DB summaries compact; load rows through paginated table detail |
 | Sessions | `/api/sessions`, `/api/sessions/:id` | Keep list compact; grow selected thread metadata through detail endpoint |
 | System | `/api/summary.system`, `/api/diagnostics/report` | Use `/api/system` for direct diagnostics and keep report export capped/read-only |
 | Release | `/api/release/health` | Keep release signals read-only; add real test coverage metrics only after runners exist |

@@ -34,7 +34,6 @@ describe('Codex Dashboard API', () => {
     assert.equal(response.status, 200);
     assert.equal(typeof body.status, 'string');
     assert.ok(Array.isArray(body.sources.files));
-    assert.ok(Array.isArray(body.databases.files));
     assert.equal(typeof body.refreshedAt, 'string');
   });
 
@@ -83,11 +82,9 @@ describe('Codex Dashboard API', () => {
     }
   });
 
-  it('protects unknown database table reads with a validation response', async () => {
-    const { response, body } = await getJson('/api/databases/unknown.sqlite/tables/missing');
+  it('does not expose database inspection endpoints', async () => {
+    const response = await fetch(`${baseUrl}/api/databases`);
 
-    assert.equal(response.status, 400);
-    assert.equal(body.error, 'unknown_database');
-    assert.ok(Array.isArray(body.allowed));
+    assert.equal(response.status, 404);
   });
 });

@@ -169,26 +169,6 @@ async function checkActivity() {
   pass('/api/activity date filters');
 }
 
-async function checkDatabases() {
-  const databases = await fetchJson('/api/databases');
-  assert(Array.isArray(databases), '/api/databases must return an array');
-  pass('/api/databases');
-
-  const database = databases.find((item) => item?.name && Array.isArray(item.tables) && item.tables[0]?.name);
-  if (!database) {
-    skip('/api/databases/:name/tables/:table', 'no readable tables');
-    return;
-  }
-
-  const tableName = database.tables[0].name;
-  const table = await fetchJson(
-    `/api/databases/${encodeURIComponent(database.name)}/tables/${encodeURIComponent(tableName)}?limit=2&offset=0`
-  );
-  assert(table.table === tableName, '/api/databases/:name/tables/:table must return selected table');
-  assert(Array.isArray(table.rows), '/api/databases/:name/tables/:table must include rows array');
-  pass('/api/databases/:name/tables/:table');
-}
-
 async function checkSystem() {
   const system = await fetchJson('/api/system');
   assert(typeof system.node === 'string', '/api/system must include node version');
@@ -220,7 +200,6 @@ async function main() {
   await checkWorkspaces();
   await checkSessions();
   await checkActivity();
-  await checkDatabases();
   await checkSystem();
   await checkReleaseHealth();
   console.log('Smoke check completed.');

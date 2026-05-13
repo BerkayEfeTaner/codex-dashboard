@@ -29,13 +29,6 @@ Response:
     "missing": 0,
     "readable": 7,
     "files": []
-  },
-  "databases": {
-    "total": 2,
-    "available": 2,
-    "missing": 0,
-    "errored": 0,
-    "files": []
   }
 }
 ```
@@ -43,11 +36,10 @@ Response:
 Rules:
 
 - `ok` is boolean and represents overall local dashboard health.
-- `status` is `healthy` when all required SQLite databases are available and Codex home is readable; otherwise `degraded`.
+- `status` is `healthy` when Codex home is readable; otherwise `degraded`.
 - `refreshedAt` is the API response time.
 - This contract is additive from the original health response: `ok`, `codexHome`, and `refreshedAt` remain present.
 - Missing or unreadable source files must be represented in `sources.files`.
-- Missing, unreadable, or invalid SQLite databases must be represented in `databases.files`.
 
 ## `GET /api/summary`
 
@@ -64,7 +56,6 @@ Top-level fields:
 | `profiles` | array | Profile list |
 | `agents` | array | Codex subagent list, or local profile-note fallback records when no TOML subagents exist |
 | `files` | array | File status objects |
-| `databases` | array | Inspected SQLite database summaries |
 | `threads` | array | Recent Codex threads |
 | `activity` | array | Recent log entries |
 | `system` | object | Runtime, file, DB, thread, and log stats |
@@ -99,7 +90,6 @@ Important nested shapes:
     "activeModel": "gpt-5.4",
     "activeReasoningEffort": "medium",
     "activeApprovalMode": "on-request",
-    "databaseFiles": [],
     "sourceFiles": [],
     "threadStats": {},
     "logStats": {}
@@ -375,83 +365,6 @@ Rules:
 - Plugin data is derived from cached plugin manifests under `.tmp/plugins` when available.
 - Marketplace metadata is joined from `.tmp/plugins/.agents/plugins/marketplace.json` when available.
 - Inventory arrays are capped so the route stays suitable for UI loading.
-
-## `GET /api/databases`
-
-Purpose: SQLite source inspection.
-
-Current response:
-
-```json
-[
-  {
-    "name": "state_5.sqlite",
-    "path": "C:\\Users\\sezer\\.codex\\state_5.sqlite",
-    "exists": true,
-    "size": 12345,
-    "modifiedAt": "2026-05-07T13:34:04.723Z",
-    "tables": [
-      {
-        "name": "threads",
-        "count": 10,
-        "columns": [
-          { "name": "id", "type": "TEXT" }
-        ]
-      }
-    ]
-  }
-]
-```
-
-Rules:
-
-- Returns an array.
-- Each database object includes `exists`.
-- Unreadable or missing DBs include `error` where available.
-
-## `GET /api/databases/:name/tables/:table`
-
-Purpose: Paginated SQLite table detail and row preview.
-
-Query params:
-
-| Param | Type | Default | Max | Description |
-| --- | --- | --- | --- | --- |
-| `limit` | integer | `50` | `200` | Maximum rows to return |
-| `offset` | integer | `0` | - | Row offset for pagination |
-
-Current response:
-
-```json
-{
-  "database": "state_5.sqlite",
-  "table": "threads",
-  "columns": [
-    { "name": "id", "type": "TEXT" }
-  ],
-  "rowCount": 43,
-  "rows": [],
-  "limit": 25,
-  "offset": 0,
-  "source": {
-    "name": "state_5.sqlite",
-    "path": "C:\\Users\\sezer\\.codex\\state_5.sqlite",
-    "exists": true,
-    "readable": true,
-    "available": true
-  },
-  "refreshedAt": "2026-05-07T13:34:04.723Z"
-}
-```
-
-Rules:
-
-- `name` must be one of the known local SQLite files.
-- Unknown database names return `400` with `unknown_database`.
-- Unknown table names return `404` with `table_not_found`.
-- Missing or unavailable databases return a clear non-200 response with `source`.
-- `limit` is clamped before database access.
-- Table identifiers are verified through `sqlite_master` and quoted by the backend before query execution.
 
 ## `GET /api/activity`
 
@@ -747,8 +660,7 @@ Current response:
     "unmappedThreads": []
   },
   "sources": {
-    "files": [],
-    "databases": []
+    "files": []
   },
   "risks": []
 }
@@ -756,7 +668,7 @@ Current response:
 
 Rules:
 
-- This endpoint is read-only and must not mutate Codex config, skills, plugins, sessions, or databases.
+- This endpoint is read-only and must not mutate Codex config, skills, plugins, or sessions.
 - `report.formatVersion` is the compatibility marker for future JSON/PDF/HTML export formats.
 - Recent thread and activity samples are capped so the report remains support-friendly.
 - The report may include local paths and source status, but should avoid unbounded raw logs.

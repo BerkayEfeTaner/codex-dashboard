@@ -106,19 +106,6 @@ export function fetchSessionDetail(id) {
   return requestJson(`/api/sessions/${encodeURIComponent(id)}`);
 }
 
-export function fetchDatabases() {
-  return requestJson('/api/databases');
-}
-
-export function fetchDatabaseTable(name, table, { limit = 25, offset = 0 } = {}) {
-  const params = new URLSearchParams({
-    limit: String(limit),
-    offset: String(offset)
-  });
-
-  return requestJson(`/api/databases/${encodeURIComponent(name)}/tables/${encodeURIComponent(table)}?${params.toString()}`);
-}
-
 export function fetchSystem() {
   return requestJson('/api/system');
 }

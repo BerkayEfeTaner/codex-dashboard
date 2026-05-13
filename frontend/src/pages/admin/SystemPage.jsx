@@ -11,8 +11,7 @@ export default function SystemPage({ summary }) {
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState('');
   const sourceFiles = summary?.system?.sourceFiles || [];
-  const databaseFiles = summary?.system?.databaseFiles || [];
-  const dataSources = [...sourceFiles, ...databaseFiles];
+  const dataSources = sourceFiles;
 
   async function handleExportReport() {
     setIsExporting(true);
@@ -87,7 +86,7 @@ export default function SystemPage({ summary }) {
         <h2>Data Sources</h2>
         <div className="compact-list">
           {dataSources.length === 0 ? (
-            <EmptyState title="No data sources" description="No configured source or database files were reported." />
+            <EmptyState title="No data sources" description="No configured source files were reported." />
           ) : (
             dataSources.map((file) => (
               <div className="compact-row" key={file.name}>

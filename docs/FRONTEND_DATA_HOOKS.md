@@ -21,7 +21,7 @@ Rules:
 
 - Keep page components away from raw `fetch`.
 - Keep endpoint-specific functions in `frontend/src/api/client.js`.
-- Name page hooks as `use<Resource>`, for example `useActivity`, `useSessions`, `useDatabases`.
+- Name page hooks as `use<Resource>`, for example `useActivity`, `useSessions`, `useProfiles`.
 - Add a dedicated hook only when the matching backend endpoint exists or is added in the same change.
 - Keep `useSummary` return shape as `{ summary, loading, error, reload }` because `Shell` and current pages already depend on it.
 
@@ -37,8 +37,6 @@ Rules:
 | `useCapabilities` | `fetchCapabilities` | Active, used by Capabilities page |
 | `useAnalyticsTrends` | `fetchAnalyticsTrends` | Active, used by Analytics page |
 | `useWorkspaces` | `fetchWorkspaces` | Active, used by Workspaces page |
-| `useDatabases` | `fetchDatabases` | Active, used by Databases page |
-| `useDatabaseTable` | `fetchDatabaseTable` | Active, used by Databases page preview panel |
 | `useProfiles` | `fetchProfiles` | Active, used by Profiles page |
 | `useSessions` | `fetchSessions` | Active, used by Sessions page |
 | `useSessionDetail` | `fetchSessionDetail` | Active, used by Sessions page detail panel |

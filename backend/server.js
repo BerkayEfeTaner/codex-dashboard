@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const { PORT, CORS_ORIGINS, CODEX_DIR, sqliteFiles } = require('./constants');
-const { clampLimit, clampOffset, statFile } = require('./utils');
+const { PORT, CORS_ORIGINS, CODEX_DIR } = require('./constants');
+const { clampLimit, clampOffset } = require('./utils');
 const { 
   readAgents, 
   readThreads, 
@@ -19,8 +19,6 @@ const {
   buildProfilesPayload,
   buildDiagnosticReportPayload,
   buildReleaseHealth,
-  inspectSqlite,
-  readDatabaseTable,
   buildConfigPreviewPayload,
   buildAgentDetailPayload,
   buildSessionDetailPayload
@@ -62,12 +60,6 @@ app.post('/api/config/preview', (req, res) => res.json(buildConfigPreviewPayload
 app.get('/api/diagnostics/report', (req, res) => res.json(buildDiagnosticReportPayload()));
 app.get('/api/analytics/trends', (req, res) => res.json(buildAnalyticsPayload({ days: req.query.days })));
 app.get('/api/workspaces', (req, res) => res.json(readWorkspaces({ limit: req.query.limit })));
-app.get('/api/databases', (req, res) => res.json(sqliteFiles.map(inspectSqlite)));
-
-app.get('/api/databases/:name/tables/:table', (req, res) => {
-  const result = readDatabaseTable(req.params.name, req.params.table, { limit: req.query.limit, offset: req.query.offset });
-  res.status(result.status).json(result.payload);
-});
 
 app.get('/api/sessions', (req, res) => {
   const limit = clampLimit(req.query.limit, 24, 100);

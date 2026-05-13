@@ -6,7 +6,6 @@ const {
   CODEX_DIR, 
   PROJECT_ROOT, 
   dashboardFiles, 
-  sqliteFiles, 
 } = require('./constants');
 const { 
   readJsonFile, 
@@ -17,7 +16,6 @@ const {
   clampLimit, 
   clampOffset, 
   parseUnixTimeFilter, 
-  quoteIdentifier, 
   normalizeUnixTime, 
   parseJsonSafe 
 } = require('./utils');
@@ -478,73 +476,6 @@ function buildReleaseHealth() {
   };
 }
 
-function inspectSqlite(fileName) {
-  const source = checkSqliteAvailability(fileName);
-  if (!sqliteFiles.includes(fileName)) {
-    return { name: fileName, allowed: false, source, tables: [] };
-  }
-
-  const db = openReadonlyDatabase(fileName);
-  if (!db) return { name: fileName, allowed: true, source, tables: [] };
-
-  try {
-    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all()
-      .map((row) => {
-        let rowCount = 0;
-        try {
-          rowCount = db.prepare(`SELECT COUNT(*) AS count FROM ${quoteIdentifier(row.name)}`).get().count;
-        } catch {
-          rowCount = 0;
-        }
-        return { name: row.name, rowCount };
-      });
-    return { name: fileName, allowed: true, source, tables };
-  } catch (error) {
-    return { name: fileName, allowed: true, source: { ...source, error: error.message }, tables: [] };
-  } finally {
-    db.close();
-  }
-}
-
-function readDatabaseTable(fileName, table, options = {}) {
-  if (!sqliteFiles.includes(fileName)) {
-    return { status: 400, payload: { error: 'unknown_database', name: fileName, allowed: sqliteFiles } };
-  }
-
-  const db = openReadonlyDatabase(fileName);
-  if (!db) {
-    return { status: 404, payload: { error: 'database_unavailable', name: fileName, source: checkSqliteAvailability(fileName) } };
-  }
-
-  try {
-    const tableRow = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(table);
-    if (!tableRow) return { status: 404, payload: { error: 'table_not_found', name: fileName, table } };
-
-    const limit = clampLimit(options.limit, 25, 100);
-    const offset = clampOffset(options.offset);
-    const columns = db.prepare(`PRAGMA table_info(${quoteIdentifier(table)})`).all().map((column) => column.name);
-    const rowCount = db.prepare(`SELECT COUNT(*) AS count FROM ${quoteIdentifier(table)}`).get().count;
-    const rows = db.prepare(`SELECT * FROM ${quoteIdentifier(table)} LIMIT ? OFFSET ?`).all(limit, offset);
-
-    return {
-      status: 200,
-      payload: {
-        name: fileName,
-        table,
-        columns,
-        rows,
-        rowCount,
-        pagination: { limit, offset, total: rowCount, hasNext: offset + limit < rowCount },
-        refreshedAt: new Date().toISOString()
-      }
-    };
-  } catch (error) {
-    return { status: 500, payload: { error: 'database_query_failed', message: error.message } };
-  } finally {
-    db.close();
-  }
-}
-
 function buildProfilesPayload() {
   const source = statSourceFile(dashboardFiles.config);
   const config = readJsonFile(path.join(CODEX_DIR, dashboardFiles.config), { profiles: [] });
@@ -588,8 +519,7 @@ function buildDiagnosticReportPayload() {
     health,
     profiles: { count: profiles.profiles.length, activeProfile: profiles.activeProfile },
     system: buildSystemSummary(profiles.activeProfile),
-    databases: sqliteFiles.map(inspectSqlite),
-    risks: health.ok ? [] : ['Codex home or database sources are degraded.']
+    risks: health.ok ? [] : ['Codex home sources are degraded.']
   };
 }
 
@@ -616,5 +546,5 @@ function buildSessionDetailPayload(thread) {
 }
 
 module.exports = {
-  readAgents, readThreads, readThreadById, readThreadStats, readRecentLogs, countRecentLogs, readWorkspaces, readUsageLimitSettings, readLogStats, buildSummary, buildHealthSummary, buildAnalyticsPayload, buildSystemSummary, buildOrchestrationPayload, buildCapabilitiesPayload, buildProfilesPayload, buildDiagnosticReportPayload, buildReleaseHealth, inspectSqlite, readDatabaseTable, buildConfigPreviewPayload, buildAgentDetailPayload, buildSessionDetailPayload
+  readAgents, readThreads, readThreadById, readThreadStats, readRecentLogs, countRecentLogs, readWorkspaces, readUsageLimitSettings, readLogStats, buildSummary, buildHealthSummary, buildAnalyticsPayload, buildSystemSummary, buildOrchestrationPayload, buildCapabilitiesPayload, buildProfilesPayload, buildDiagnosticReportPayload, buildReleaseHealth, buildConfigPreviewPayload, buildAgentDetailPayload, buildSessionDetailPayload
 };

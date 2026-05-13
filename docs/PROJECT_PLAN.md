@@ -2,13 +2,13 @@
 
 ## Product Vision
 
-Codex Dashboard is a local-first control panel for understanding Codex usage, sessions, agents, profiles, activity, databases, and system health from one place.
+Codex Dashboard is a local-first control panel for understanding Codex usage, sessions, agents, profiles, activity, and system health from one place.
 
 The dashboard should answer these questions quickly:
 
 - What is Codex doing now?
 - Which sessions, agents, profiles, and tools are involved?
-- Which local databases and config files are being used?
+- Which local source and config files are being used?
 - Is the local environment healthy?
 - What changed recently, and where should I inspect next?
 
@@ -24,7 +24,6 @@ Implemented pages:
 - Capabilities
 - Activity
 - Profiles
-- Databases
 - Sessions
 - System
 - Release
@@ -41,8 +40,6 @@ Implemented backend endpoints:
 - `/api/diagnostics/report`
 - `/api/analytics/trends`
 - `/api/workspaces`
-- `/api/databases`
-- `/api/databases/:name/tables/:table`
 - `/api/activity`
 - `/api/sessions`
 - `/api/sessions/:id`
@@ -78,7 +75,6 @@ Required sections:
 - System health summary
 - Active/recent sessions
 - Recent activity
-- Database status
 - Agent/profile summary
 - Warnings and errors
 - Last refresh time and source event times
@@ -93,7 +89,7 @@ Required sections:
 - Session detail
 - Tool timeline
 - Model/profile/sandbox metadata
-- Related activity and database records
+- Related activity records
 - Empty/error states for missing session data
 
 ### 3. Activity
@@ -105,7 +101,7 @@ Required sections:
 - Chronological event timeline
 - Tool calls
 - Shell commands
-- File/database activity
+- File and tool activity
 - Error and warning events
 - Search and filters by type/time/status
 
@@ -135,20 +131,7 @@ Required sections:
 - MCP/tooling configuration
 - Risk indicators for permissive settings
 
-### 6. Databases
-
-Purpose: Make local data sources observable.
-
-Required sections:
-
-- Database connection status
-- Table list
-- Row counts
-- Recent records
-- Migration/schema state
-- Clear fallback states for missing or unreadable DBs
-
-### 7. System
+### 6. System
 
 Purpose: Diagnose local runtime health.
 
@@ -162,7 +145,7 @@ Required sections:
 - Log availability
 - Health check results
 
-### 8. Shared UX
+### 7. Shared UX
 
 Required across all pages:
 
@@ -174,7 +157,7 @@ Required across all pages:
 - Stable refresh behavior
 - Clear distinction between refresh time and event time
 
-### 9. Analytics
+### 8. Analytics
 
 Purpose: Show usage trends without overloading the Overview payload.
 
@@ -186,7 +169,7 @@ Required sections:
 - Range controls with backend-side clamping
 - Source availability and refresh metadata
 
-### 10. Workspaces
+### 9. Workspaces
 
 Purpose: Show Codex usage by local project root.
 
@@ -210,7 +193,6 @@ Included:
 - Overview summarizes the system in under 30 seconds of reading.
 - Sessions and Activity show recent records chronologically.
 - Agents and Profiles reflect local config data.
-- Databases show connection/table/row-count status.
 - Workspaces show local project roots and recent Codex usage.
 - System shows local runtime health.
 - UI handles empty, loading, and error states.
@@ -261,7 +243,7 @@ Tasks:
 Acceptance criteria:
 
 - Dashboard opens cleanly on desktop/tablet/mobile widths.
-- Overview shows health, sessions, activity, DB, and config status.
+- Overview shows health, sessions, activity, and config status.
 - System shows actionable runtime information.
 
 ### Sprint 2: Sessions And Activity
@@ -300,25 +282,7 @@ Acceptance criteria:
 - Important permission/sandbox settings are visible.
 - Config source paths are shown.
 
-### Sprint 4: Database Observability
-
-Goal: Make local database state reliable and explainable.
-
-Tasks:
-
-- Add table detail endpoint.
-- Show row counts and recent records.
-- Add schema/migration indicators.
-- Improve DB error reporting.
-- Add pagination/limits for growing data.
-
-Acceptance criteria:
-
-- User can tell which DBs are readable.
-- User can inspect tables without opening SQLite manually.
-- Large tables do not freeze the UI.
-
-### Sprint 5: MVP Hardening
+### Sprint 4: MVP Hardening
 
 Goal: Prepare a usable MVP release.
 

@@ -256,8 +256,7 @@ h3 {
 }
 
 .stat-card,
-.panel,
-.database-card {
+.panel {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -285,8 +284,7 @@ h3 {
   line-height: 1;
 }
 
-.panel,
-.database-card {
+.panel {
   min-width: 0;
   padding: 16px;
 }
@@ -531,8 +529,7 @@ h3 {
 .history-list,
 .table-list,
 .timeline,
-.thread-list,
-.database-grid {
+.thread-list {
   display: grid;
   gap: 8px;
   margin-top: 14px;
@@ -1108,64 +1105,6 @@ h3 {
 .table-row span {
   color: var(--muted);
   overflow-wrap: anywhere;
-}
-
-.database-grid {
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-}
-
-.database-layout {
-  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
-}
-
-.database-list-panel,
-.table-detail-panel {
-  min-height: calc(100vh - 116px);
-}
-
-.table-select-row {
-  width: 100%;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  text-align: left;
-  color: inherit;
-  cursor: pointer;
-}
-
-.table-select-row:hover,
-.table-select-row:focus-visible,
-.table-select-row.selected {
-  border-color: var(--line);
-  background: #f6f9fb;
-  outline: 0;
-}
-
-.data-preview {
-  overflow-x: auto;
-}
-
-.data-preview-header,
-.data-preview-row {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(6, minmax(120px, 1fr));
-  min-width: 760px;
-  border-bottom: 1px solid var(--line);
-  padding: 9px 0;
-}
-
-.data-preview-header {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.data-preview-row span {
-  overflow: hidden;
-  color: var(--text);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .pager-actions {

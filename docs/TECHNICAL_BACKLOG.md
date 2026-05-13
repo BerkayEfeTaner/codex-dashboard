@@ -4,7 +4,7 @@ This backlog turns the product plan into implementation work. It is ordered by d
 
 ## API Split Strategy
 
-Current frontend pages mostly consume `/api/summary`. This is acceptable for the first working version, but it will not scale if sessions, activity logs, and database table details grow.
+Current frontend pages mostly consume `/api/summary`. This is acceptable for the first working version, but it will not scale if sessions and activity logs grow.
 
 ### Keep On `/api/summary`
 
@@ -19,7 +19,6 @@ Current frontend pages mostly consume `/api/summary`. This is acceptable for the
 | --- | --- | --- | --- |
 | P1 | Sessions | `GET /api/sessions`, `GET /api/sessions/:id` | Thread lists and details will grow and need filtering/detail views |
 | P1 | Activity | `GET /api/activity?level=&target=&threadId=&query=&limit=` | Logs can grow fast and need backend-side filtering |
-| P1 | Databases | `GET /api/databases`, `GET /api/databases/:name/tables/:table` | Table inspection should be paginated and isolated from overview |
 | P2 | Profiles | `GET /api/profiles` | Profile data is small now but deserves a stable contract |
 | P2 | Agents | `GET /api/agents`, `GET /api/agents/:id` | Agent details and skills can grow later |
 | P2 | System | `GET /api/system` | Already exists; frontend can switch from summary when System expands |
@@ -53,7 +52,7 @@ Tasks:
 
 - Add hook pattern for endpoint-backed pages. Done in `frontend/src/hooks/useEndpoint.js`.
 - Start with `useSummary` only if implementation should stay minimal. Done; `useSummary` now wraps the shared hook without changing its public return shape.
-- Document naming convention: `useActivity`, `useSessions`, `useDatabases`. Done in `docs/FRONTEND_DATA_HOOKS.md`.
+- Document naming convention: `useActivity`, `useSessions`, `useProfiles`. Done in `docs/FRONTEND_DATA_HOOKS.md`.
 
 Acceptance criteria:
 
@@ -90,11 +89,11 @@ Tasks:
 - Include backend status. Done.
 - Include Codex home existence. Done.
 - Include readable source counts. Done.
-- Include database availability summary. Done.
+- Include source availability summary. Done.
 
 Acceptance criteria:
 
-- Health response identifies missing Codex home or DB files. Done.
+- Health response identifies missing Codex home or source files. Done.
 - Overview/System can display actionable health state.
 
 ### TB-102: Improve Overview Information Architecture
@@ -107,13 +106,12 @@ Tasks:
 
 - Add health card. Done.
 - Add recent activity preview. Done.
-- Add database status preview. Done.
 - Add source file status preview. Done.
 - Keep detailed lists out of Overview. Done.
 
 Acceptance criteria:
 
-- User can understand health, activity, sessions, and DB state without opening raw files. Done.
+- User can understand health, activity, sessions, and source state without opening raw files. Done.
 - Overview remains readable on desktop and mobile. Done.
 
 ### TB-103: Standard Page Header
@@ -206,24 +204,6 @@ Acceptance criteria:
 
 ## Sprint 4 Candidate Work
 
-### TB-401: Add Database Table Detail Endpoint
-
-Goal: Inspect large SQLite tables without putting rows into summary.
-
-Status: Done
-
-Tasks:
-
-- Done: Add `GET /api/databases/:name/tables/:table`.
-- Done: Support `limit` and `offset`.
-- Done: Restrict `name` to known SQLite files.
-- Done: Quote identifiers safely.
-
-Acceptance criteria:
-
-- Done: Table detail returns columns, row count, and paginated rows.
-- Done: Unknown database/table returns a clear error response.
-
 ## Sprint 5 Candidate Work
 
 ### TB-501: Add Session Detail Contract
@@ -261,23 +241,6 @@ Acceptance criteria:
 
 - Done: Activity filtering and pagination happen backend-side.
 - Done: Existing `/api/activity` consumers remain compatible.
-
-### TB-503: Add Database Preview Pagination UI
-
-Status: Done
-
-Goal: Expose the existing database table pagination contract in the UI.
-
-Tasks:
-
-- Done: Pass `offset` from Databases page into `useDatabaseTable`.
-- Done: Reset table offset when the selected table changes.
-- Done: Add previous/next controls and row range display.
-
-Acceptance criteria:
-
-- Done: Large tables can be inspected page by page without expanding summary payloads.
-- Done: The backend table contract remains unchanged.
 
 ## Sprint 6 Candidate Work
 
@@ -468,7 +431,7 @@ Tasks:
 Acceptance criteria:
 
 - Done: Workspace inventory remains read-only.
-- Done: Missing state or log databases degrade to empty stats/source status.
+- Done: Missing state or log SQLite sources degrade to empty stats/source status.
 - Done: The page supports search and responsive workspace cards.
 
 ### TB-709: Test Coverage And Release Health Panels
@@ -501,7 +464,7 @@ Tasks:
 
 - Done: Add backend `npm.cmd test` using Node's built-in `node --test` runner.
 - Done: Export the Express app without opening a port during tests.
-- Done: Add backend API contract tests for health, release health, and database validation behavior.
+- Done: Add backend API contract tests for health, release health, and removed database inspection routes.
 - Done: Add frontend `npm.cmd test` using Vitest, Testing Library, and jsdom.
 - Done: Add frontend API client tests and Release page render coverage.
 
