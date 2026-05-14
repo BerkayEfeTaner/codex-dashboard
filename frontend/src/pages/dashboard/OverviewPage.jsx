@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { Activity, Bot, CalendarDays, FileText, Gauge, GitBranch, Layers3, ShieldCheck } from 'lucide-react';
+import { Activity, ArrowRight, Bot, CalendarDays, FileText, Gauge, GitBranch, Layers3, ShieldCheck } from 'lucide-react';
 import { Badge } from 'reactstrap';
 import { Detail } from '../../components/ui/Detail.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
@@ -8,12 +8,12 @@ import { StatCard } from '../../components/ui/StatCard.jsx';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
 const conceptSignals = [
-  { label: 'Agent', value: 'active worker', tone: 'core' },
-  { label: 'Subagent', value: 'specialized profile', tone: 'profile' },
+  { label: 'Agent', value: 'main worker', tone: 'core' },
+  { label: 'Subagent', value: 'delegated worker', tone: 'profile' },
   { label: 'Skill', value: 'reusable instruction', tone: 'skill' },
-  { label: 'Session', value: 'task context', tone: 'session' },
-  { label: 'Workspace', value: 'project scope', tone: 'workspace' },
-  { label: 'Approval', value: 'tool boundary', tone: 'boundary' }
+  { label: 'Session', value: 'conversation memory', tone: 'session' },
+  { label: 'Workspace', value: 'project boundary', tone: 'workspace' },
+  { label: 'Approval', value: 'tool permission', tone: 'boundary' }
 ];
 
 const internalActivityTargets = [
@@ -30,6 +30,15 @@ const internalActivityTargets = [
 
 function isInternalActivity(entry) {
   return internalActivityTargets.includes(entry?.target);
+}
+
+function displayProfileValue(value) {
+  return value || 'not detected';
+}
+
+function activityTitle(entry) {
+  if (!entry?.target) return 'Codex event';
+  return entry.target.replaceAll('_', ' ');
 }
 
 function usageBadgeColor(status) {
@@ -185,10 +194,10 @@ export default function OverviewPage({ summary, loading }) {
           <span className="pill">{summary?.activeProfile?.name || 'default'}</span>
         </div>
         <div className="detail-list overview-profile-list">
-          <Detail label="Model" value={summary?.activeProfile?.model} />
-          <Detail label="Reasoning" value={summary?.activeProfile?.reasoningEffort} />
-          <Detail label="Approval" value={summary?.activeProfile?.approvalMode} />
-          <Detail label="Profile" value={summary?.activeProfile?.name} />
+          <Detail label="Model" value={displayProfileValue(summary?.activeProfile?.model)} />
+          <Detail label="Reasoning" value={displayProfileValue(summary?.activeProfile?.reasoningEffort)} />
+          <Detail label="Approval" value={displayProfileValue(summary?.activeProfile?.approvalMode)} />
+          <Detail label="Profile" value={displayProfileValue(summary?.activeProfile?.name)} />
         </div>
       </section>
 
@@ -207,7 +216,7 @@ export default function OverviewPage({ summary, loading }) {
             {recentActivity.map((entry, index) => (
               <div className="compact-row overview-activity-row" key={`${entry.tsIso || index}-${entry.target || 'event'}`}>
                 <div>
-                  <strong>{entry.target || 'Codex event'}</strong>
+                  <strong>{activityTitle(entry)}</strong>
                   <span>{formatDate(entry.tsIso)}</span>
                 </div>
                 <span className={`level level-${entry.level || 'info'}`}>{entry.level || 'info'}</span>
@@ -225,10 +234,14 @@ export default function OverviewPage({ summary, loading }) {
           </div>
         </div>
         <div className="codex-map-grid">
-          {conceptSignals.map((item) => (
-            <div className={`codex-map-term codex-map-term-${item.tone}`} key={item.label}>
-              <strong>{item.label}</strong>
-              <span>{item.value}</span>
+          {conceptSignals.map((item, index) => (
+            <div className="codex-map-step" key={item.label}>
+              <div className={`codex-map-term codex-map-term-${item.tone}`}>
+                <span className="codex-map-index">{index + 1}</span>
+                <strong>{item.label}</strong>
+                <span>{item.value}</span>
+              </div>
+              {index < conceptSignals.length - 1 ? <ArrowRight className="codex-map-arrow" size={18} aria-hidden="true" /> : null}
             </div>
           ))}
         </div>

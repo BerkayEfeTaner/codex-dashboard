@@ -751,6 +751,43 @@ h3 {
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
+.codex-map-step {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.codex-map-step:last-child {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.codex-map-term {
+  position: relative;
+  min-height: 92px;
+  padding: 14px 12px 12px 40px;
+}
+
+.codex-map-index {
+  position: absolute;
+  top: 14px;
+  left: 12px;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.codex-map-arrow {
+  color: #8aa0ad;
+}
+
 .overview-profile-list {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
