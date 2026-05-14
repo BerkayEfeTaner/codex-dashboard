@@ -1,0 +1,1 @@
+function e(e){return e?new Intl.DateTimeFormat(`tr-TR`,{dateStyle:`short`,timeStyle:`medium`}).format(new Date(e)):`-`}function t(e){return new Intl.NumberFormat(`tr-TR`,{notation:`compact`,maximumFractionDigits:1}).format(e)}export{e as n,t};
