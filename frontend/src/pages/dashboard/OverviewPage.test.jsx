@@ -78,6 +78,10 @@ const summary = {
     }
   },
   activity: [],
+  system: {
+    activeModel: 'gpt-5',
+    activeApprovalMode: 'never'
+  },
   activeProfile: {}
 };
 
@@ -92,6 +96,20 @@ describe('OverviewPage', () => {
     expect(within(usagePanel).getByText('Weekly Window')).toBeInTheDocument();
     expect(within(usagePanel).getAllByText('53%').length).toBeGreaterThan(0);
     expect(within(usagePanel).getAllByText('36%').length).toBeGreaterThan(0);
+  });
+
+  it('surfaces the core runtime loop without exposing local paths', () => {
+    render(<OverviewPage summary={summary} loading={false} />);
+
+    const loopPanel = screen.getByRole('heading', { name: 'Runtime Loop' }).closest('section');
+
+    expect(within(loopPanel).getByText('Context')).toBeInTheDocument();
+    expect(within(loopPanel).getByText('4 sessions')).toBeInTheDocument();
+    expect(within(loopPanel).getByText('Tools')).toBeInTheDocument();
+    expect(within(loopPanel).getByText('Workspace')).toBeInTheDocument();
+    expect(within(loopPanel).getByText('Guardrails')).toBeInTheDocument();
+    expect(within(loopPanel).getByText('never')).toBeInTheDocument();
+    expect(screen.queryByText('C:\\Users\\sezer\\.codex')).not.toBeInTheDocument();
   });
 
   it('does not show stale expired limits as current health', () => {

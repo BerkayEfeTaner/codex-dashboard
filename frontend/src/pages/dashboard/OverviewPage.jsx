@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { Activity, ArrowRight, Bot, CalendarDays, FileText, Gauge, GitBranch, Layers3, ShieldCheck } from 'lucide-react';
+import { Activity, ArrowRight, Bot, CalendarDays, FileText, Gauge, GitBranch, Layers3, ShieldCheck, Wrench } from 'lucide-react';
 import { Badge } from 'reactstrap';
 import { Detail } from '../../components/ui/Detail.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
@@ -51,6 +51,10 @@ function formatWindowMinutes(minutes) {
   return `${minutes} minutes`;
 }
 
+function boundaryLabel(value) {
+  return displayProfileValue(value).replaceAll('_', ' ');
+}
+
 function RateLimitCard({ title, icon: Icon, limit }) {
   const remainingPercent = limit?.remainingPercent ?? 0;
   const hasData = !limit?.stale && limit?.usedPercent !== null && limit?.usedPercent !== undefined;
@@ -99,27 +103,122 @@ function RateLimitCard({ title, icon: Icon, limit }) {
   );
 }
 
+function OverviewLoadingState() {
+  return (
+    <div className="page-grid overview-page" aria-busy="true">
+      <div className="page-header overview-loading-header">
+        <div>
+          <span className="skeleton-line skeleton-title" />
+          <span className="skeleton-line skeleton-subtitle" />
+        </div>
+        <span className="skeleton-pill" />
+      </div>
+      <section className="stat-grid overview-stat-grid">
+        {[0, 1, 2, 3].map((item) => (
+          <div className="stat-card overview-skeleton-card" key={item}>
+            <div className="card-body">
+              <div>
+                <span className="skeleton-line skeleton-label" />
+                <span className="skeleton-line skeleton-value" />
+                <span className="skeleton-line skeleton-subtitle" />
+              </div>
+              <span className="skeleton-icon" />
+            </div>
+          </div>
+        ))}
+      </section>
+      <section className="panel wide overview-skeleton-panel">
+        <span className="skeleton-line skeleton-title" />
+        <div className="runtime-loop-grid">
+          {[0, 1, 2, 3].map((item) => (
+            <div className="runtime-loop-card" key={item}>
+              <span className="skeleton-line skeleton-label" />
+              <span className="skeleton-line skeleton-value" />
+              <span className="skeleton-line skeleton-subtitle" />
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function OverviewPage({ summary, loading }) {
   const health = summary?.health;
   const usage = summary?.usage;
   const rateLimits = usage?.rateLimits;
+  const counts = summary?.counts || {};
   const recentActivity = visibleCodexActivity(summary?.activity).slice(0, 6);
+  const activeProfile = summary?.activeProfile || {};
+  const activeModel = activeProfile.model || summary?.system?.activeModel;
+  const activeApproval = activeProfile.approvalMode || summary?.system?.activeApprovalMode;
+  const workflowSignals = [
+    {
+      label: 'Context',
+      value: `${counts.threads || 0} sessions`,
+      detail: 'Conversation state available',
+      icon: GitBranch
+    },
+    {
+      label: 'Tools',
+      value: 'task scoped',
+      detail: 'Commands and file edits run through tool calls',
+      icon: Wrench
+    },
+    {
+      label: 'Workspace',
+      value: health?.codexHomeReadable ? 'readable' : 'needs attention',
+      detail: 'Files are handled inside the current project boundary',
+      icon: FileText
+    },
+    {
+      label: 'Guardrails',
+      value: boundaryLabel(activeApproval),
+      detail: 'Approval mode defines risky action handling',
+      icon: ShieldCheck
+    }
+  ];
 
-  if (loading && !summary) return <div className="panel">Loading dashboard...</div>;
+  if (loading && !summary) return <OverviewLoadingState />;
 
   return (
     <div className="page-grid overview-page">
       <PageHeader
         title="Codex Overview"
         subtitle="Live status for the Codex concepts, limits, and current working profile"
+        action={<span className="overview-refresh-note">Updated {formatDate(summary?.refreshedAt)}</span>}
         status={{ label: health?.status || 'unknown', tone: health?.ok ? 'ok' : 'warn' }}
       />
 
       <section className="stat-grid overview-stat-grid">
-        <StatCard label="Subagents" value={summary?.counts.agents || 0} icon={Bot} description="delegation profiles" />
-        <StatCard label="Skills" value={summary?.counts.skills || 0} icon={Layers3} description="reusable instructions" />
-        <StatCard label="Sessions" value={summary?.counts.threads || 0} icon={GitBranch} description="stored conversations" />
-        <StatCard label="Activity Events" value={formatCompact(summary?.counts.logs || 0)} icon={Activity} description="visible Codex signals" />
+        <StatCard label="Subagents" value={counts.agents || 0} icon={Bot} description="delegation profiles" />
+        <StatCard label="Skills" value={counts.skills || 0} icon={Layers3} description="reusable instructions" />
+        <StatCard label="Sessions" value={counts.threads || 0} icon={GitBranch} description="stored conversations" />
+        <StatCard label="Activity Events" value={formatCompact(counts.logs || 0)} icon={Activity} description="visible Codex signals" />
+      </section>
+
+      <section className="panel wide overview-loop-panel">
+        <div className="panel-header">
+          <div>
+            <h2>Runtime Loop</h2>
+            <p>How the active turn moves through Codex</p>
+          </div>
+          <span className="pill">{activeModel || 'model pending'}</span>
+        </div>
+        <div className="runtime-loop-grid">
+          {workflowSignals.map((item) => (
+            <div className="runtime-loop-card" key={item.label}>
+              <div className="icon-row">
+                {createElement(item.icon, { size: 18, 'aria-hidden': 'true' })}
+                <div>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              </div>
+              <p>{item.detail}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="panel wide usage-limits-panel">
@@ -171,13 +270,13 @@ export default function OverviewPage({ summary, loading }) {
             <h2>Active Profile</h2>
             <p>Current model and tool boundary</p>
           </div>
-          <span className="pill">{summary?.activeProfile?.name || 'default'}</span>
+          <span className="pill">{activeProfile.name || 'default'}</span>
         </div>
         <div className="detail-list overview-profile-list">
-          <Detail label="Model" value={displayProfileValue(summary?.activeProfile?.model)} />
-          <Detail label="Reasoning" value={displayProfileValue(summary?.activeProfile?.reasoningEffort)} />
-          <Detail label="Approval" value={displayProfileValue(summary?.activeProfile?.approvalMode)} />
-          <Detail label="Profile" value={displayProfileValue(summary?.activeProfile?.name)} />
+          <Detail label="Model" value={displayProfileValue(activeModel)} />
+          <Detail label="Reasoning" value={displayProfileValue(activeProfile.reasoningEffort)} />
+          <Detail label="Approval" value={boundaryLabel(activeApproval)} />
+          <Detail label="Profile" value={displayProfileValue(activeProfile.name)} />
         </div>
       </section>
 
@@ -190,7 +289,9 @@ export default function OverviewPage({ summary, loading }) {
           <span className="pill">{recentActivity.length} shown</span>
         </div>
         {recentActivity.length === 0 ? (
-          <EmptyState title="No activity yet" description="Recent Codex log events will appear here." />
+          <div className="overview-empty-slot">
+            <EmptyState title="No visible activity" description="Codex activity appears here after non-telemetry events are recorded." />
+          </div>
         ) : (
           <div className="compact-list overview-activity-list">
             {recentActivity.map((entry, index) => {
