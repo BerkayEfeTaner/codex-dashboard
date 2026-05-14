@@ -8,12 +8,12 @@ import { StatCard } from '../../components/ui/StatCard.jsx';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
 const conceptSignals = [
-  { label: 'Agent', value: 'main worker', tone: 'core' },
-  { label: 'Subagent', value: 'delegated worker', tone: 'profile' },
-  { label: 'Skill', value: 'reusable instruction', tone: 'skill' },
-  { label: 'Session', value: 'conversation memory', tone: 'session' },
-  { label: 'Workspace', value: 'project boundary', tone: 'workspace' },
-  { label: 'Approval', value: 'tool permission', tone: 'boundary' }
+  { label: 'Agent', value: 'handles the active turn', detail: 'Primary worker', tone: 'core' },
+  { label: 'Subagent', value: 'takes delegated work', detail: 'Parallel support', tone: 'profile' },
+  { label: 'Skill', value: 'adds task-specific rules', detail: 'Reusable guidance', tone: 'skill' },
+  { label: 'Session', value: 'keeps conversation state', detail: 'Thread context', tone: 'session' },
+  { label: 'Workspace', value: 'bounds files and commands', detail: 'Local project', tone: 'workspace' },
+  { label: 'Approval', value: 'controls risky actions', detail: 'Permission layer', tone: 'boundary' }
 ];
 
 const internalActivityTargets = [
@@ -36,9 +36,35 @@ function displayProfileValue(value) {
   return value || 'not detected';
 }
 
-function activityTitle(entry) {
-  if (!entry?.target) return 'Codex event';
-  return entry.target.replaceAll('_', ' ');
+function prettifyActivityTarget(target) {
+  return target.replaceAll('_', ' ').replaceAll('::', ' / ');
+}
+
+function activityDisplay(entry) {
+  const target = entry?.target || '';
+  const normalized = target.toLowerCase();
+
+  if (!target) {
+    return { title: 'Codex event', detail: 'General runtime signal' };
+  }
+
+  if (normalized.includes('tool') || normalized.includes('exec') || normalized.includes('command')) {
+    return { title: 'Tool activity', detail: prettifyActivityTarget(target) };
+  }
+
+  if (normalized.includes('file') || normalized.includes('patch') || normalized.includes('write')) {
+    return { title: 'Workspace change', detail: prettifyActivityTarget(target) };
+  }
+
+  if (normalized.includes('session') || normalized.includes('thread')) {
+    return { title: 'Session signal', detail: prettifyActivityTarget(target) };
+  }
+
+  if (normalized.includes('approval') || normalized.includes('permission')) {
+    return { title: 'Approval boundary', detail: prettifyActivityTarget(target) };
+  }
+
+  return { title: prettifyActivityTarget(target), detail: 'Codex activity signal' };
 }
 
 function usageBadgeColor(status) {
@@ -136,10 +162,10 @@ export default function OverviewPage({ summary, loading }) {
       />
 
       <section className="stat-grid overview-stat-grid">
-        <StatCard label="Subagents" value={summary?.counts.agents || 0} icon={Bot} />
-        <StatCard label="Skills" value={summary?.counts.skills || 0} icon={Layers3} />
-        <StatCard label="Sessions" value={summary?.counts.threads || 0} icon={GitBranch} />
-        <StatCard label="Activity Events" value={formatCompact(summary?.counts.logs || 0)} icon={Activity} />
+        <StatCard label="Subagents" value={summary?.counts.agents || 0} icon={Bot} description="delegation profiles" />
+        <StatCard label="Skills" value={summary?.counts.skills || 0} icon={Layers3} description="reusable instructions" />
+        <StatCard label="Sessions" value={summary?.counts.threads || 0} icon={GitBranch} description="stored conversations" />
+        <StatCard label="Activity Events" value={formatCompact(summary?.counts.logs || 0)} icon={Activity} description="visible Codex signals" />
       </section>
 
       <section className="panel wide usage-limits-panel">
@@ -213,15 +239,21 @@ export default function OverviewPage({ summary, loading }) {
           <EmptyState title="No activity yet" description="Recent Codex log events will appear here." />
         ) : (
           <div className="compact-list overview-activity-list">
-            {recentActivity.map((entry, index) => (
-              <div className="compact-row overview-activity-row" key={`${entry.tsIso || index}-${entry.target || 'event'}`}>
-                <div>
-                  <strong>{activityTitle(entry)}</strong>
-                  <span>{formatDate(entry.tsIso)}</span>
+            {recentActivity.map((entry, index) => {
+              const display = activityDisplay(entry);
+
+              return (
+                <div className="compact-row overview-activity-row" key={`${entry.tsIso || index}-${entry.target || 'event'}`}>
+                  <div>
+                    <strong>{display.title}</strong>
+                    <span>
+                      {display.detail} - {formatDate(entry.tsIso)}
+                    </span>
+                  </div>
+                  <span className={`level level-${entry.level || 'info'}`}>{entry.level || 'info'}</span>
                 </div>
-                <span className={`level level-${entry.level || 'info'}`}>{entry.level || 'info'}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -230,7 +262,7 @@ export default function OverviewPage({ summary, loading }) {
         <div className="panel-header">
           <div>
             <h2>Codex Map</h2>
-            <p>Core Codex concepts</p>
+            <p>Six core concepts in the working loop</p>
           </div>
         </div>
         <div className="codex-map-grid">
@@ -240,6 +272,7 @@ export default function OverviewPage({ summary, loading }) {
                 <span className="codex-map-index">{index + 1}</span>
                 <strong>{item.label}</strong>
                 <span>{item.value}</span>
+                <small>{item.detail}</small>
               </div>
               {index < conceptSignals.length - 1 ? <ArrowRight className="codex-map-arrow" size={18} aria-hidden="true" /> : null}
             </div>

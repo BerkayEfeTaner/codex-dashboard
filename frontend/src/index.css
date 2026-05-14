@@ -306,8 +306,8 @@ h3 {
 
 .overview-stat-grid .stat-card .card-body {
   display: flex;
-  min-height: 82px;
-  align-items: center;
+  min-height: 94px;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
   padding: 14px 18px 14px 20px;
@@ -317,6 +317,14 @@ h3 {
   display: block;
   color: var(--muted);
   font-size: 12px;
+}
+
+.stat-card small {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
 }
 
 .stat-card strong {
@@ -638,7 +646,8 @@ h3 {
 .concept-signal strong,
 .concept-signal span,
 .codex-map-term strong,
-.codex-map-term span {
+.codex-map-term span,
+.codex-map-term small {
   display: block;
   min-width: 0;
   overflow-wrap: anywhere;
@@ -654,6 +663,13 @@ h3 {
   margin-top: 3px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.codex-map-term small {
+  margin-top: 9px;
+  color: #40515b;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .execution-page > .inline-error {
@@ -765,7 +781,7 @@ h3 {
 
 .codex-map-term {
   position: relative;
-  min-height: 92px;
+  min-height: 108px;
   padding: 14px 12px 12px 40px;
 }
 
@@ -815,6 +831,12 @@ h3 {
 
 .overview-activity-row div {
   min-width: 0;
+}
+
+.overview-activity-row span:not(.level) {
+  display: block;
+  margin-top: 4px;
+  line-height: 1.35;
 }
 
 .overview-activity-row .level {

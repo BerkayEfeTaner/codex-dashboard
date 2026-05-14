@@ -137,6 +137,7 @@ describe('OverviewPage', () => {
     expect(within(mapPanel).getByText('Approval')).toBeInTheDocument();
     expect(screen.queryByText('opentelemetry_sdk')).not.toBeInTheDocument();
     expect(screen.queryByText('codex_otel.trace_safe')).not.toBeInTheDocument();
-    expect(screen.getByText('Project file edited')).toBeInTheDocument();
+    expect(screen.getByText('Workspace change')).toBeInTheDocument();
+    expect(screen.getByText(/Project file edited/)).toBeInTheDocument();
   });
 });
