@@ -12,7 +12,6 @@ const ActivityPage = lazy(() => import('./pages/data/ActivityPage.jsx'));
 const ProfilesPage = lazy(() => import('./pages/admin/ProfilesPage.jsx'));
 const SessionsPage = lazy(() => import('./pages/data/SessionsPage.jsx'));
 const SystemPage = lazy(() => import('./pages/admin/SystemPage.jsx'));
-const ReleasePage = lazy(() => import('./pages/admin/ReleasePage.jsx'));
 
 function PageLoader() {
   return <div className="panel">Loading page...</div>;
@@ -35,7 +34,7 @@ export default function App() {
           <Route path="/profiles" element={<ProfilesPage />} />
           <Route path="/sessions" element={<SessionsPage />} />
           <Route path="/system" element={<SystemPage summary={summaryState.summary} />} />
-          <Route path="/release" element={<ReleasePage />} />
+          <Route path="/release" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Suspense>

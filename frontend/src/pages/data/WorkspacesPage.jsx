@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Badge, Input } from 'reactstrap';
-import { Activity, Database, FolderGit2, GitBranch, Search, ShieldCheck } from 'lucide-react';
+import { Activity, FolderGit2, GitBranch, Search, ShieldCheck } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import { InlineError } from '../../components/ui/InlineError.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
@@ -12,7 +12,6 @@ function matchesWorkspace(workspace, query) {
   if (!query) return true;
   const haystack = [
     workspace.name,
-    workspace.path,
     ...Object.keys(workspace.models || {}),
     ...Object.keys(workspace.approvalModes || {}),
     ...Object.keys(workspace.sandboxTypes || {})
@@ -43,7 +42,7 @@ function WorkspaceCard({ workspace }) {
       <div className="workspace-card-head">
         <div>
           <h3>{workspace.name}</h3>
-          <span>{workspace.path || 'No cwd recorded'}</span>
+          <span>{workspace.readable ? 'Workspace available' : 'Workspace not reachable'}</span>
         </div>
         <Badge color={workspace.readable ? 'success' : 'warning'}>
           {workspace.readable ? 'readable' : 'unavailable'}
@@ -52,7 +51,7 @@ function WorkspaceCard({ workspace }) {
 
       <div className="workspace-metrics">
         <div>
-          <span>Threads</span>
+          <span>Sessions</span>
           <strong>{formatCompact(workspace.threadCount || 0)}</strong>
         </div>
         <div>
@@ -87,16 +86,6 @@ function WorkspaceCard({ workspace }) {
   );
 }
 
-function SourceRow({ label, source }) {
-  return (
-    <div>
-      <span>{label}</span>
-      <strong>{source?.path || '-'}</strong>
-      <small>{source?.available ? 'available' : source?.error || 'unavailable'}</small>
-    </div>
-  );
-}
-
 export default function WorkspacesPage() {
   const { data, loading, error } = useWorkspaces(48);
   const [query, setQuery] = useState('');
@@ -118,7 +107,7 @@ export default function WorkspacesPage() {
       <div className="stat-grid">
         <StatCard label="Workspaces" value={formatCompact(stats.total || 0)} icon={FolderGit2} />
         <StatCard label="Readable" value={formatCompact(stats.readable || 0)} icon={ShieldCheck} />
-        <StatCard label="Threads" value={formatCompact(stats.threads || 0)} icon={GitBranch} />
+        <StatCard label="Sessions" value={formatCompact(stats.threads || 0)} icon={GitBranch} />
         <StatCard label="Log events" value={formatCompact(stats.logEvents || 0)} icon={Activity} />
       </div>
 
@@ -128,7 +117,7 @@ export default function WorkspacesPage() {
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search workspace path, model, or policy"
+            placeholder="Search workspace, model, or policy"
             aria-label="Search workspaces"
           />
         </div>
@@ -138,7 +127,7 @@ export default function WorkspacesPage() {
         <div className="panel-header">
           <div>
             <span className="eyebrow">Workspace Inventory</span>
-            <h2>Project roots from Codex thread history</h2>
+            <h2>Projects from Codex session history</h2>
           </div>
           <Badge color="light">{filteredWorkspaces.length}</Badge>
         </div>
@@ -154,19 +143,6 @@ export default function WorkspacesPage() {
         )}
       </section>
 
-      <section className="panel wide">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Sources</span>
-            <h2>Workspace inputs</h2>
-          </div>
-          <Database size={18} aria-hidden="true" />
-        </div>
-        <div className="source-grid">
-          <SourceRow label="Thread state" source={data?.source?.state} />
-          <SourceRow label="Log events" source={data?.source?.logs} />
-        </div>
-      </section>
     </div>
   );
 }

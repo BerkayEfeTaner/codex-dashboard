@@ -7,6 +7,15 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { StatCard } from '../../components/ui/StatCard.jsx';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
+const conceptSignals = [
+  { label: 'Agent', value: 'active worker' },
+  { label: 'Subagent', value: 'specialized profile' },
+  { label: 'Skill', value: 'reusable instruction' },
+  { label: 'Session', value: 'task context' },
+  { label: 'Workspace', value: 'project scope' },
+  { label: 'Approval', value: 'tool boundary' }
+];
+
 function usageBadgeColor(status) {
   if (status === 'ok') return 'success';
   if (status === 'warning') return 'warning';
@@ -95,7 +104,6 @@ export default function OverviewPage({ summary, loading }) {
   const usage = summary?.usage;
   const rateLimits = usage?.rateLimits;
   const recentActivity = summary?.activity?.slice(0, 5) || [];
-  const sourceFiles = health?.sources?.files?.slice(0, 5) || [];
 
   if (loading && !summary) return <div className="panel">Loading dashboard...</div>;
 
@@ -103,14 +111,14 @@ export default function OverviewPage({ summary, loading }) {
     <div className="page-grid">
       <PageHeader
         title="Overview"
-        subtitle="Compact Codex runtime, source, session, and activity status"
+        subtitle="Codex runtime, concepts, session, and activity status"
         status={{ label: health?.status || 'unknown', tone: health?.ok ? 'ok' : 'warn' }}
       />
 
       <section className="stat-grid">
         <StatCard label="Subagents" value={summary?.counts.agents || 0} icon={Bot} />
         <StatCard label="Skills" value={summary?.counts.skills || 0} icon={Layers3} />
-        <StatCard label="Threads" value={summary?.counts.threads || 0} icon={GitBranch} />
+        <StatCard label="Sessions" value={summary?.counts.threads || 0} icon={GitBranch} />
         <StatCard label="Log Events" value={formatCompact(summary?.counts.logs || 0)} icon={Activity} />
       </section>
 
@@ -141,8 +149,8 @@ export default function OverviewPage({ summary, loading }) {
           <div className="compact-row icon-row">
             <ShieldCheck size={18} aria-hidden="true" />
             <div>
-              <strong>{health?.codexHomeReadable ? 'Codex home readable' : 'Codex home needs attention'}</strong>
-              <span>{health?.codexHomeReadable ? 'Local Codex sources are accessible' : 'Local Codex sources need attention'}</span>
+              <strong>{health?.codexHomeReadable ? 'Codex sources readable' : 'Codex sources need attention'}</strong>
+              <span>No local path is shown here; only readiness is surfaced.</span>
             </div>
           </div>
           <div className="compact-row icon-row">
@@ -154,6 +162,24 @@ export default function OverviewPage({ summary, loading }) {
               <span>{health?.sources?.missing || 0} missing source files</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <h2>Codex Map</h2>
+            <p>Short labels for explaining the moving parts</p>
+          </div>
+          <span className="pill">{conceptSignals.length} terms</span>
+        </div>
+        <div className="concept-signal-grid">
+          {conceptSignals.map((item) => (
+            <div className="concept-signal" key={item.label}>
+              <strong>{item.label}</strong>
+              <span>{item.value}</span>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -197,7 +223,7 @@ export default function OverviewPage({ summary, loading }) {
             <span>Node runtime</span>
           </div>
           <div className="compact-row">
-            <strong>{summary?.system?.threadStats?.active || 0} active threads</strong>
+            <strong>{summary?.system?.threadStats?.active || 0} active sessions</strong>
             <span>{summary?.system?.platform || '-'}</span>
           </div>
         </div>
@@ -215,30 +241,6 @@ export default function OverviewPage({ summary, loading }) {
             </div>
           ))}
         </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <h2>Source Files</h2>
-            <p>Readiness preview</p>
-          </div>
-          <Badge color={health?.sources?.missing ? 'warning' : 'success'}>
-            {health?.sources?.readable || 0}/{health?.sources?.total || 0}
-          </Badge>
-        </div>
-        {sourceFiles.length === 0 ? (
-          <EmptyState title="No source files" description="Configured Codex dashboard files will appear here." />
-        ) : (
-          <div className="compact-list">
-            {sourceFiles.map((file) => (
-              <div className="compact-row" key={file.name}>
-                <strong>{file.name}</strong>
-                <span>{file.readable ? 'readable' : file.exists ? 'unreadable' : 'missing'}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
     </div>
   );

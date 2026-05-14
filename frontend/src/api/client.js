@@ -105,7 +105,3 @@ export function fetchSessionDetail(id) {
 export function fetchSystem() {
   return requestJson('/api/system');
 }
-
-export function fetchReleaseHealth() {
-  return requestJson('/api/release/health');
-}

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchReleaseHealth, fetchSessionDetail } from './client.js';
+import { fetchSessionDetail, fetchSummary } from './client.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -14,14 +14,6 @@ function mockFetch(payload, ok = true, status = 200) {
 }
 
 describe('api client', () => {
-  it('requests release health from the release endpoint', async () => {
-    const payload = { release: { readiness: 'ready', score: 100 } };
-    mockFetch(payload);
-
-    await expect(fetchReleaseHealth()).resolves.toEqual(payload);
-    expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/^\/api\/release\/health\?_=\d+$/), { cache: 'no-store' });
-  });
-
   it('encodes session detail ids before building the URL', async () => {
     mockFetch({ id: 'session 1/2' });
 
@@ -33,6 +25,6 @@ describe('api client', () => {
   it('throws on non-2xx responses', async () => {
     mockFetch({ error: 'not_found' }, false, 404);
 
-    await expect(fetchReleaseHealth()).rejects.toThrow('HTTP 404');
+    await expect(fetchSummary()).rejects.toThrow('HTTP 404');
   });
 });

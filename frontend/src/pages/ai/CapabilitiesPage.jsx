@@ -29,7 +29,7 @@ function SkillCard({ skill }) {
       <div className="capability-card-head">
         <div>
           <h3>{skill.name}</h3>
-          <span>{skill.description || skill.path}</span>
+          <span>{skill.description || 'Reusable Codex instruction set'}</span>
         </div>
         <Badge color={skill.scope === 'system' ? 'secondary' : 'success'}>{skill.scope}</Badge>
       </div>
@@ -49,7 +49,7 @@ function PluginCard({ plugin }) {
       <div className="capability-card-head">
         <div>
           <h3>{plugin.displayName || plugin.name}</h3>
-          <span>{plugin.description || plugin.path}</span>
+          <span>{plugin.description || 'Codex extension manifest'}</span>
         </div>
         <Badge color={plugin.marketplaceStatus === 'AVAILABLE' ? 'info' : 'light'}>{plugin.marketplaceStatus}</Badge>
       </div>
@@ -73,11 +73,13 @@ function PluginCard({ plugin }) {
 }
 
 function SourceRow({ label, source }) {
+  const isAvailable = Boolean(source?.readable || source?.available);
+
   return (
     <div>
       <span>{label}</span>
-      <strong>{source?.path || '-'}</strong>
-      <small>{source?.readable ? 'readable' : 'unavailable'}</small>
+      <strong>{isAvailable ? 'Available' : 'Unavailable'}</strong>
+      <small>{isAvailable ? 'readable' : 'unavailable'}</small>
     </div>
   );
 }
@@ -164,7 +166,7 @@ export default function CapabilitiesPage() {
         <div className="panel-header">
           <div>
             <span className="eyebrow">Sources</span>
-              <h2>Skill inputs</h2>
+            <h2>Skill inputs</h2>
           </div>
           <ShieldCheck size={18} aria-hidden="true" />
         </div>

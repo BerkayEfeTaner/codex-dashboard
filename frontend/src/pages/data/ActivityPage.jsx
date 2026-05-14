@@ -105,15 +105,15 @@ export default function ActivityPage() {
         />
         <div className="advanced-filter-grid" aria-label="Advanced activity filters">
           <label>
-            <span>Thread</span>
+            <span>Session</span>
             <input
-              aria-label="Filter activity by thread id"
+              aria-label="Filter activity by session id"
               value={threadId}
               onChange={(event) => {
                 setThreadId(event.target.value);
                 setOffset(0);
               }}
-              placeholder="Thread id"
+              placeholder="Session id"
             />
           </label>
           <label>
@@ -183,7 +183,7 @@ export default function ActivityPage() {
       </section>
 
       <section className="panel">
-        <h2>Log Health</h2>
+        <h2>Activity Health</h2>
         <div className="detail-list">
           {logLevels.length === 0 ? (
             <EmptyState title="No log levels" description="Log level statistics are not available yet." />

@@ -393,11 +393,6 @@ h3 {
   margin: 0;
 }
 
-.release-page > .inline-error {
-  grid-column: 1 / -1;
-  margin: 0;
-}
-
 .range-control .btn {
   min-width: 48px;
 }
@@ -522,6 +517,38 @@ h3 {
   margin-top: 3px;
   overflow-wrap: anywhere;
   font-size: 15px;
+}
+
+.concept-signal-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.concept-signal {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 11px 12px;
+}
+
+.concept-signal strong,
+.concept-signal span {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.concept-signal strong {
+  font-size: 14px;
+}
+
+.concept-signal span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .detail-list,
@@ -815,51 +842,6 @@ h3 {
   display: grid;
   gap: 14px;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-}
-
-.release-check-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-}
-
-.release-check-card {
-  display: grid;
-  min-width: 0;
-  gap: 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-soft);
-  padding: 12px;
-}
-
-.release-check-card > div {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.release-check-card strong,
-.release-check-card span,
-.release-check-card code,
-.release-check-card small {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.release-check-card span,
-.release-check-card small {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.release-check-card code {
-  border-radius: 6px;
-  background: #edf2f5;
-  padding: 6px 8px;
-  color: var(--text);
-  font-size: 12px;
 }
 
 .workspace-card {
@@ -1210,6 +1192,7 @@ h3 {
   .page-grid.two-col,
   .advanced-filter-grid,
   .capability-layout,
+  .concept-signal-grid,
   .file-relationship-row,
   .session-policy-grid,
     .source-grid,

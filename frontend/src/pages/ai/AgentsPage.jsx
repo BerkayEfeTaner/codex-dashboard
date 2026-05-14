@@ -92,7 +92,7 @@ export default function AgentsPage() {
               <div><span>ID</span><strong>{detail.id}</strong></div>
               <div><span>Model</span><strong>{detail.model || 'Unknown'}</strong></div>
               <div><span>Reasoning</span><strong>{detail.reasoningEffort || 'Default'}</strong></div>
-              <div><span>Source</span><strong>{detailState.data?.source?.path || 'Unknown source'}</strong></div>
+              <div><span>Source</span><strong>{detailState.data?.source?.readable === false ? 'Unavailable' : 'Local Codex profile'}</strong></div>
               <div>
                 <span>Last usage</span>
                 <strong>{usage?.updatedAtIso || 'Not available yet'}</strong>

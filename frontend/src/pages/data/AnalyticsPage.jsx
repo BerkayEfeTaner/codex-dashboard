@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Activity, BarChart3, Clock, Database, GitBranch } from 'lucide-react';
+import { Activity, BarChart3, Clock, GitBranch } from 'lucide-react';
 import { Button, ButtonGroup } from 'reactstrap';
 import {
   Bar,
@@ -17,7 +17,7 @@ import { InlineError } from '../../components/ui/InlineError.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { StatCard } from '../../components/ui/StatCard.jsx';
 import { useAnalyticsTrends } from '../../hooks/useAnalyticsTrends.js';
-import { formatBytes, formatCompact, formatDate } from '../../utils/format.js';
+import { formatCompact, formatDate } from '../../utils/format.js';
 
 const ranges = [7, 14, 30, 90];
 
@@ -55,7 +55,7 @@ export default function AnalyticsPage() {
     () => (dailyRows || []).map((row) => ({ ...row, label: row.day?.slice(5) || row.day })),
     [dailyRows]
   );
-  const hasDailyData = daily.some((row) => row.sessions || row.logEvents || row.tokensUsed || row.estimatedBytes);
+  const hasDailyData = daily.some((row) => row.sessions || row.logEvents || row.tokensUsed);
   const totals = data?.totals || {};
   const averages = data?.averages || {};
   const distributions = data?.distributions || {};
@@ -89,7 +89,7 @@ export default function AnalyticsPage() {
         <StatCard label="Sessions" value={formatCompact(totals.sessions || 0)} icon={GitBranch} />
         <StatCard label="Log Events" value={formatCompact(totals.logEvents || 0)} icon={Activity} />
         <StatCard label="Tokens" value={formatCompact(totals.tokensUsed || 0)} icon={BarChart3} />
-        <StatCard label="Estimated Bytes" value={formatBytes(totals.estimatedBytes || 0)} icon={Database} />
+        <StatCard label="Models" value={formatCompact((distributions.models || []).length)} icon={BarChart3} />
       </section>
 
       <section className="panel wide">
@@ -122,12 +122,12 @@ export default function AnalyticsPage() {
         <div className="panel-header">
           <div>
             <h2>Usage Volume</h2>
-            <p>Token and estimated log byte volume</p>
+            <p>Token usage by source event day</p>
           </div>
           <span className="pill">{formatCompact(averages.tokensPerDay || 0)} tokens/day</span>
         </div>
         {!hasDailyData ? (
-          <EmptyState title="No volume data" description="Usage volume will appear when token or log byte records are available." />
+          <EmptyState title="No volume data" description="Usage volume will appear when token records are available." />
         ) : (
           <div className="chart-wrap chart-wrap-large">
             <ResponsiveContainer width="100%" height={320}>
@@ -135,9 +135,8 @@ export default function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={formatCompact} />
-                <Tooltip formatter={(value, name) => (name === 'Estimated bytes' ? formatBytes(value) : formatCompact(value))} />
+                <Tooltip formatter={(value) => formatCompact(value)} />
                 <Bar dataKey="tokensUsed" name="Tokens" fill="#0f766e" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="estimatedBytes" name="Estimated bytes" fill="#7c3aed" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -146,7 +145,7 @@ export default function AnalyticsPage() {
 
       <DistributionList
         title="Models"
-        subtitle="Most common thread models in range"
+        subtitle="Most common session models in range"
         items={distributions.models || []}
         emptyTitle="No model usage"
       />
@@ -177,12 +176,12 @@ export default function AnalyticsPage() {
             <span>{data?.range?.from ? `${formatDate(data.range.from)} - ${formatDate(data.range.to)}` : '-'}</span>
           </div>
           <div className="compact-row">
-            <strong>{data?.source?.threads?.available ? 'Threads available' : 'Threads unavailable'}</strong>
-            <span>{data?.source?.threads?.name || 'state_5.sqlite'}</span>
+            <strong>{data?.source?.threads?.available ? 'Sessions available' : 'Sessions unavailable'}</strong>
+            <span>Conversation history</span>
           </div>
           <div className="compact-row">
             <strong>{data?.source?.logs?.available ? 'Logs available' : 'Logs unavailable'}</strong>
-            <span>{data?.source?.logs?.name || 'logs_2.sqlite'}</span>
+            <span>Activity events</span>
           </div>
         </div>
       </section>

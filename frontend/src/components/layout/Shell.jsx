@@ -2,11 +2,10 @@ import { NavLink } from 'react-router-dom';
 import { Button, Nav, NavItem } from 'reactstrap';
 import {
   BarChart3,
+  BookOpen,
   Bot,
   FolderGit2,
-  Gauge,
   GitBranch,
-  PackageCheck,
   Puzzle,
   RefreshCw,
   ShieldCheck,
@@ -17,33 +16,27 @@ import { InlineError } from '../ui/InlineError.jsx';
 
 const navGroups = [
   {
-    label: 'Monitor',
-    items: [
-      { to: '/dashboard', label: 'Overview', icon: Gauge },
-      { to: '/activity', label: 'Activity', icon: TerminalSquare },
-      { to: '/analytics', label: 'Analytics', icon: BarChart3 }
-    ]
-  },
-  {
-    label: 'Workspace',
-    items: [
-      { to: '/workspaces', label: 'Workspaces', icon: FolderGit2 },
-      { to: '/sessions', label: 'Sessions', icon: GitBranch }
-    ]
-  },
-  {
     label: 'Codex',
     items: [
+      { to: '/dashboard', label: 'Overview', icon: BookOpen },
       { to: '/agents', label: 'Subagents', icon: Bot },
       { to: '/capabilities', label: 'Skills', icon: Puzzle }
     ]
   },
   {
-    label: 'System',
+    label: 'Workflow',
     items: [
+      { to: '/sessions', label: 'Sessions', icon: GitBranch },
+      { to: '/activity', label: 'Activity', icon: TerminalSquare },
+      { to: '/analytics', label: 'Analytics', icon: BarChart3 }
+    ]
+  },
+  {
+    label: 'Local Setup',
+    items: [
+      { to: '/workspaces', label: 'Workspaces', icon: FolderGit2 },
       { to: '/profiles', label: 'Profiles', icon: Settings },
-      { to: '/system', label: 'System', icon: ShieldCheck },
-      { to: '/release', label: 'Release', icon: PackageCheck }
+      { to: '/system', label: 'System', icon: ShieldCheck }
     ]
   }
 ];

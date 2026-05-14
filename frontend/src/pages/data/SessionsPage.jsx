@@ -8,6 +8,11 @@ import { useSessionDetail } from '../../hooks/useSessionDetail.js';
 import { useSessions } from '../../hooks/useSessions.js';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
+function displayFileName(path) {
+  if (!path) return 'Unknown file';
+  return path.split(/[\\/]/).filter(Boolean).pop() || path;
+}
+
 export default function SessionsPage() {
   const [selectedThreadId, setSelectedThreadId] = useState('');
   const { data, loading, error } = useSessions(24);
@@ -27,13 +32,13 @@ export default function SessionsPage() {
     <div className="page-grid two-col">
       <section className="panel session-panel">
         <PageHeader
-          title="Threads"
-          subtitle={loading ? 'Loading Codex threads' : `${stats.total || 0} total Codex threads`}
+          title="Sessions"
+          subtitle={loading ? 'Loading Codex sessions' : `${stats.total || 0} total Codex sessions`}
           status={{ label: `${stats.active || 0} active`, tone: 'ok' }}
         />
         <InlineError title="Sessions unavailable" message={error} />
         {threads.length === 0 ? (
-          <EmptyState title="No threads found" description="No Codex conversation threads were found yet." />
+          <EmptyState title="No sessions found" description="No Codex conversation sessions were found yet." />
         ) : (
           <div className="thread-list">
             {threads.map((thread) => (
@@ -45,7 +50,7 @@ export default function SessionsPage() {
               >
                 <div>
                   <strong>{thread.title || thread.id}</strong>
-                  <p>{thread.firstUserMessage || thread.cwd || '-'}</p>
+                  <p>{thread.firstUserMessage || thread.model || 'No summary recorded'}</p>
                 </div>
                 <div className="thread-meta">
                   <span>{thread.model || '-'}</span>
@@ -59,18 +64,17 @@ export default function SessionsPage() {
       </section>
       <section className="panel session-detail-panel">
         <PageHeader
-          title="Thread Detail"
-          subtitle={detailLoading ? 'Loading selected thread' : activeThread?.id || 'No thread selected'}
+          title="Session Detail"
+          subtitle={detailLoading ? 'Loading selected session' : activeThread?.id || 'No session selected'}
           status={activeThread ? { label: activeThread.archived ? 'archived' : 'active', tone: activeThread.archived ? 'warn' : 'ok' } : null}
         />
-        <InlineError title="Thread detail unavailable" message={detailError} />
+        <InlineError title="Session detail unavailable" message={detailError} />
         {!activeThread ? (
-          <EmptyState title="No thread selected" description="Select a thread to inspect metadata and related activity." />
+          <EmptyState title="No session selected" description="Select a session to inspect metadata and related activity." />
         ) : (
           <>
             <div className="detail-list">
               <Detail label="Title" value={activeThread.title || '-'} />
-              <Detail label="Working directory" value={activeThread.cwd || '-'} />
               <Detail label="Model" value={activeThread.model || '-'} />
               <Detail label="Reasoning" value={activeThread.reasoningEffort || '-'} />
               <Detail label="Approval" value={activeThread.approvalMode || '-'} />
@@ -84,21 +88,21 @@ export default function SessionsPage() {
                 <p>{activeThread.firstUserMessage}</p>
               </div>
             )}
-            <h2 className="section-title">File Relationships</h2>
+            <h2 className="section-title">Touched Files</h2>
             <div className="relationship-summary">
               <Detail label="Files" value={formatCompact(fileGraph.totals?.files || 0)} />
               <Detail label="Linked events" value={formatCompact(fileGraph.totals?.events || 0)} />
             </div>
             <div className="file-relationship-list">
               {relatedFiles.length === 0 ? (
-                <EmptyState title="No linked files" description="No file or module path entries are linked to this thread yet." />
+                <EmptyState title="No linked files" description="No file entries are linked to this session yet." />
               ) : (
                 relatedFiles.map((file) => {
                   const primaryTarget = Object.entries(file.targets || {}).sort((a, b) => b[1] - a[1])[0];
                   return (
                     <article className="file-relationship-row" key={file.path}>
                       <div>
-                        <strong>{file.path}</strong>
+                        <strong>{displayFileName(file.path)}</strong>
                         <span>{primaryTarget ? `${primaryTarget[0]} / ${formatCompact(primaryTarget[1])} events` : 'No target'}</span>
                       </div>
                       <div className="relationship-meter" aria-label={`${file.events} linked events`}>
@@ -113,7 +117,7 @@ export default function SessionsPage() {
             <h2 className="section-title">Related Activity</h2>
             <div className="compact-list">
               {relatedActivity.length === 0 ? (
-                <EmptyState title="No related activity" description="No log entries are linked to this thread yet." />
+                <EmptyState title="No related activity" description="No log entries are linked to this session yet." />
               ) : (
                 relatedActivity.map((entry) => (
                   <div className="compact-row" key={entry.id}>
@@ -127,7 +131,7 @@ export default function SessionsPage() {
         )}
         <div className="session-policy-grid">
           <div>
-            <h2>Thread Policy</h2>
+            <h2>Session Policy</h2>
             <div className="chips">
               {byApproval.map(([name, count]) => <Badge className="chip" key={name}>{name}: {count}</Badge>)}
             </div>
