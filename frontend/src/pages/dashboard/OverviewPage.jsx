@@ -8,13 +8,29 @@ import { StatCard } from '../../components/ui/StatCard.jsx';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
 const conceptSignals = [
-  { label: 'Agent', value: 'active worker' },
-  { label: 'Subagent', value: 'specialized profile' },
-  { label: 'Skill', value: 'reusable instruction' },
-  { label: 'Session', value: 'task context' },
-  { label: 'Workspace', value: 'project scope' },
-  { label: 'Approval', value: 'tool boundary' }
+  { label: 'Agent', value: 'active worker', tone: 'core' },
+  { label: 'Subagent', value: 'specialized profile', tone: 'profile' },
+  { label: 'Skill', value: 'reusable instruction', tone: 'skill' },
+  { label: 'Session', value: 'task context', tone: 'session' },
+  { label: 'Workspace', value: 'project scope', tone: 'workspace' },
+  { label: 'Approval', value: 'tool boundary', tone: 'boundary' }
 ];
+
+const internalActivityTargets = [
+  'codex_api::endpoint::responses_websocket',
+  'codex_app_server::outgoing_message',
+  'codex_otel.log_only',
+  'codex_otel.trace_safe',
+  'hyper_util::client::legacy::client',
+  'hyper_util::client::legacy::connect::http',
+  'hyper_util::client::legacy::pool',
+  'opentelemetry-otlp',
+  'opentelemetry_sdk'
+];
+
+function isInternalActivity(entry) {
+  return internalActivityTargets.includes(entry?.target);
+}
 
 function usageBadgeColor(status) {
   if (status === 'ok') return 'success';
@@ -98,37 +114,37 @@ export default function OverviewPage({ summary, loading }) {
   const health = summary?.health;
   const usage = summary?.usage;
   const rateLimits = usage?.rateLimits;
-  const recentActivity = summary?.activity?.slice(0, 12) || [];
+  const recentActivity = summary?.activity?.filter((entry) => !isInternalActivity(entry)).slice(0, 6) || [];
 
   if (loading && !summary) return <div className="panel">Loading dashboard...</div>;
 
   return (
-    <div className="page-grid">
+    <div className="page-grid overview-page">
       <PageHeader
-        title="Overview"
-        subtitle="Codex runtime, concepts, session, and activity status"
+        title="Codex Overview"
+        subtitle="Live status for the Codex concepts, limits, and current working profile"
         status={{ label: health?.status || 'unknown', tone: health?.ok ? 'ok' : 'warn' }}
       />
 
-      <section className="stat-grid">
+      <section className="stat-grid overview-stat-grid">
         <StatCard label="Subagents" value={summary?.counts.agents || 0} icon={Bot} />
         <StatCard label="Skills" value={summary?.counts.skills || 0} icon={Layers3} />
         <StatCard label="Sessions" value={summary?.counts.threads || 0} icon={GitBranch} />
-        <StatCard label="Log Events" value={formatCompact(summary?.counts.logs || 0)} icon={Activity} />
+        <StatCard label="Activity Events" value={formatCompact(summary?.counts.logs || 0)} icon={Activity} />
       </section>
 
       <section className="panel wide usage-limits-panel">
         <PageHeader
           title="Usage Limits"
-          subtitle="Real Codex rate-limit percentages from local session events"
+          subtitle="Remaining capacity from local Codex session signals"
           status={{
-            label: rateLimits?.source?.available ? 'rate limits detected' : 'rate limits unavailable',
+            label: rateLimits?.source?.available ? 'limits detected' : 'limits unavailable',
             tone: rateLimits?.source?.available ? 'ok' : 'idle'
           }}
         />
         <div className="usage-limit-grid">
-          <RateLimitCard title="5-Hour" icon={Gauge} limit={rateLimits?.primary ? { ...rateLimits.primary, updatedAt: rateLimits?.updatedAt } : null} />
-          <RateLimitCard title="Weekly" icon={CalendarDays} limit={rateLimits?.secondary ? { ...rateLimits.secondary, updatedAt: rateLimits?.updatedAt } : null} />
+          <RateLimitCard title="5-Hour Window" icon={Gauge} limit={rateLimits?.primary ? { ...rateLimits.primary, updatedAt: rateLimits?.updatedAt } : null} />
+          <RateLimitCard title="Weekly Window" icon={CalendarDays} limit={rateLimits?.secondary ? { ...rateLimits.secondary, updatedAt: rateLimits?.updatedAt } : null} />
         </div>
       </section>
 
@@ -136,7 +152,7 @@ export default function OverviewPage({ summary, loading }) {
         <div className="panel-header">
           <div>
             <h2>Health</h2>
-            <p>Runtime and source readiness</p>
+            <p>Source readiness</p>
           </div>
           <span className={`status ${health?.ok ? 'ok' : 'warn'}`}>{health?.status || 'unknown'}</span>
         </div>
@@ -160,25 +176,23 @@ export default function OverviewPage({ summary, loading }) {
         </div>
       </section>
 
-      <section className="panel overview-activity-panel">
+      <section className="panel overview-profile-panel">
         <div className="panel-header">
           <div>
-            <h2>Codex Map</h2>
-            <p>Short labels for explaining the moving parts</p>
+            <h2>Active Profile</h2>
+            <p>Current model and tool boundary</p>
           </div>
-          <span className="pill">{conceptSignals.length} terms</span>
+          <span className="pill">{summary?.activeProfile?.name || 'default'}</span>
         </div>
-        <div className="concept-signal-grid">
-          {conceptSignals.map((item) => (
-            <div className="concept-signal" key={item.label}>
-              <strong>{item.label}</strong>
-              <span>{item.value}</span>
-            </div>
-          ))}
+        <div className="detail-list overview-profile-list">
+          <Detail label="Model" value={summary?.activeProfile?.model} />
+          <Detail label="Reasoning" value={summary?.activeProfile?.reasoningEffort} />
+          <Detail label="Approval" value={summary?.activeProfile?.approvalMode} />
+          <Detail label="Profile" value={summary?.activeProfile?.name} />
         </div>
       </section>
 
-      <section className="panel">
+      <section className="panel overview-activity-panel">
         <div className="panel-header">
           <div>
             <h2>Recent Activity</h2>
@@ -191,22 +205,32 @@ export default function OverviewPage({ summary, loading }) {
         ) : (
           <div className="compact-list overview-activity-list">
             {recentActivity.map((entry, index) => (
-              <div className="compact-row" key={`${entry.tsIso || index}-${entry.target || 'event'}`}>
-                <strong>{entry.target || 'Codex event'}</strong>
-                <span>{entry.level || 'info'} - {formatDate(entry.tsIso)}</span>
+              <div className="compact-row overview-activity-row" key={`${entry.tsIso || index}-${entry.target || 'event'}`}>
+                <div>
+                  <strong>{entry.target || 'Codex event'}</strong>
+                  <span>{formatDate(entry.tsIso)}</span>
+                </div>
+                <span className={`level level-${entry.level || 'info'}`}>{entry.level || 'info'}</span>
               </div>
             ))}
           </div>
         )}
       </section>
 
-      <section className="panel">
-        <h2>Active Profile</h2>
-        <div className="detail-list">
-          <Detail label="Name" value={summary?.activeProfile?.name} />
-          <Detail label="Model" value={summary?.activeProfile?.model} />
-          <Detail label="Reasoning" value={summary?.activeProfile?.reasoningEffort} />
-          <Detail label="Approval" value={summary?.activeProfile?.approvalMode} />
+      <section className="panel overview-map-panel">
+        <div className="panel-header">
+          <div>
+            <h2>Codex Map</h2>
+            <p>Core Codex concepts</p>
+          </div>
+        </div>
+        <div className="codex-map-grid">
+          {conceptSignals.map((item) => (
+            <div className={`codex-map-term codex-map-term-${item.tone}`} key={item.label}>
+              <strong>{item.label}</strong>
+              <span>{item.value}</span>
+            </div>
+          ))}
         </div>
       </section>
     </div>

@@ -87,9 +87,9 @@ describe('OverviewPage', () => {
 
     const usagePanel = screen.getByRole('heading', { name: 'Usage Limits' }).closest('section');
 
-    expect(within(usagePanel).getByText('rate limits detected')).toBeInTheDocument();
-    expect(within(usagePanel).getByText('5-Hour')).toBeInTheDocument();
-    expect(within(usagePanel).getByText('Weekly')).toBeInTheDocument();
+    expect(within(usagePanel).getByText('limits detected')).toBeInTheDocument();
+    expect(within(usagePanel).getByText('5-Hour Window')).toBeInTheDocument();
+    expect(within(usagePanel).getByText('Weekly Window')).toBeInTheDocument();
     expect(within(usagePanel).getAllByText('53%').length).toBeGreaterThan(0);
     expect(within(usagePanel).getAllByText('36%').length).toBeGreaterThan(0);
   });
@@ -117,5 +117,26 @@ describe('OverviewPage', () => {
 
     expect(within(usagePanel).getByText('awaiting update')).toBeInTheDocument();
     expect(within(usagePanel).getByText('Awaiting update')).toBeInTheDocument();
+  });
+
+  it('keeps internal telemetry targets out of the overview map and recent activity', () => {
+    const activitySummary = {
+      ...summary,
+      activity: [
+        { target: 'opentelemetry_sdk', level: 'debug', tsIso: '2026-05-08T12:00:00.000Z' },
+        { target: 'codex_otel.trace_safe', level: 'info', tsIso: '2026-05-08T12:01:00.000Z' },
+        { target: 'Project file edited', level: 'info', tsIso: '2026-05-08T12:02:00.000Z' }
+      ]
+    };
+
+    render(<OverviewPage summary={activitySummary} loading={false} />);
+
+    const mapPanel = screen.getByRole('heading', { name: 'Codex Map' }).closest('section');
+
+    expect(within(mapPanel).getByText('Agent')).toBeInTheDocument();
+    expect(within(mapPanel).getByText('Approval')).toBeInTheDocument();
+    expect(screen.queryByText('opentelemetry_sdk')).not.toBeInTheDocument();
+    expect(screen.queryByText('codex_otel.trace_safe')).not.toBeInTheDocument();
+    expect(screen.getByText('Project file edited')).toBeInTheDocument();
   });
 });
