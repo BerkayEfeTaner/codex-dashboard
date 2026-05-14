@@ -95,11 +95,6 @@ function RateLimitCard({ title, icon: Icon, limit }) {
 }
 
 export default function OverviewPage({ summary, loading }) {
-  const sourceTypes = (summary?.agents || []).reduce((acc, agent) => {
-    const key = agent.type || agent.source || 'unknown';
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {});
   const health = summary?.health;
   const usage = summary?.usage;
   const rateLimits = usage?.rateLimits;
@@ -212,34 +207,6 @@ export default function OverviewPage({ summary, loading }) {
           <Detail label="Model" value={summary?.activeProfile?.model} />
           <Detail label="Reasoning" value={summary?.activeProfile?.reasoningEffort} />
           <Detail label="Approval" value={summary?.activeProfile?.approvalMode} />
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2>Runtime</h2>
-        <div className="compact-list">
-          <div className="compact-row">
-            <strong>{summary?.system?.node || '-'}</strong>
-            <span>Node runtime</span>
-          </div>
-          <div className="compact-row">
-            <strong>{summary?.system?.threadStats?.active || 0} active sessions</strong>
-            <span>{summary?.system?.platform || '-'}</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2>Subagent Sources</h2>
-        <div className="compact-list">
-          {Object.keys(sourceTypes).length === 0 ? (
-            <EmptyState title="No source data" description="Codex subagent source types will appear when records are available." />
-          ) : Object.entries(sourceTypes).map(([source, count]) => (
-            <div className="compact-row" key={source}>
-              <strong>{source}</strong>
-              <span>{count} records</span>
-            </div>
-          ))}
         </div>
       </section>
     </div>
