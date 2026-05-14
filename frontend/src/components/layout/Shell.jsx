@@ -48,7 +48,7 @@ const navGroups = [
   }
 ];
 
-export function Shell({ summary, loading, refreshing, error, reload, children }) {
+export function Shell({ loading, refreshing, error, reload, children }) {
   return (
     <div className="app-shell tw-min-h-screen">
       <aside className="sidebar tw-shrink-0">
@@ -80,7 +80,6 @@ export function Shell({ summary, loading, refreshing, error, reload, children })
         <header className="header">
           <div>
             <h1>Codex Dashboard</h1>
-            <p>{summary?.codexHome || 'Loading Codex data...'}</p>
           </div>
           <Button className="icon-button" type="button" onClick={reload} disabled={loading || refreshing} aria-label="Refresh">
             <RefreshCw size={18} aria-hidden="true" />

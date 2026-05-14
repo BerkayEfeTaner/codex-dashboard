@@ -142,7 +142,7 @@ export default function OverviewPage({ summary, loading }) {
             <ShieldCheck size={18} aria-hidden="true" />
             <div>
               <strong>{health?.codexHomeReadable ? 'Codex home readable' : 'Codex home needs attention'}</strong>
-              <span>{health?.codexHome || summary?.codexHome || '-'}</span>
+              <span>{health?.codexHomeReadable ? 'Local Codex sources are accessible' : 'Local Codex sources need attention'}</span>
             </div>
           </div>
           <div className="compact-row icon-row">
