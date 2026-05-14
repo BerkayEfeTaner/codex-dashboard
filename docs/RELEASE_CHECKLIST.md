@@ -21,7 +21,6 @@ The backend smoke check validates the shape and availability of:
 - `GET /api/summary`
 - `GET /api/agents`
 - `GET /api/agents/:id` when agent records exist
-- `GET /api/orchestration`
 - `GET /api/capabilities`
 - `GET /api/profiles`
 - `POST /api/config/preview`

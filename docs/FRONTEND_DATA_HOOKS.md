@@ -33,7 +33,6 @@ Rules:
 | `useActivity` | `fetchActivity` | Active, used by Activity page with backend filters |
 | `useAgents` | `fetchAgents` | Active, used by Agents page |
 | `useAgentDetail` | `fetchAgentDetail` | Active, used by Agents page detail panel |
-| `useOrchestration` | `fetchOrchestration` | Active, used by Orchestration page |
 | `useCapabilities` | `fetchCapabilities` | Active, used by Capabilities page |
 | `useAnalyticsTrends` | `fetchAnalyticsTrends` | Active, used by Analytics page |
 | `useWorkspaces` | `fetchWorkspaces` | Active, used by Workspaces page |

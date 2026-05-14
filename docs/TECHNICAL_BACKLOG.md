@@ -318,25 +318,6 @@ Acceptance criteria:
 - Done: Missing file relationship data degrades to an empty state.
 - Done: The relationship panel is responsive and does not require a heavy graph dependency.
 
-### TB-703: Agent Orchestration View
-
-Status: Done
-
-Goal: Show how configured agents relate to detected agent sessions and recent Codex threads without adding mutation controls.
-
-Tasks:
-
-- Done: Add `GET /api/orchestration`.
-- Done: Derive capped lanes, links, unmapped threads, and source metadata from local Codex files.
-- Done: Add Orchestration page, route, navigation item, and data hook.
-- Done: Add smoke coverage for the orchestration contract.
-
-Acceptance criteria:
-
-- Done: The page is read-only and future mutation flows remain out of MVP scope.
-- Done: Missing relationships degrade to explicit empty states.
-- Done: The view remains responsive and does not require a heavy graph dependency.
-
 ### TB-704: Skill/Plugin Management View
 
 Status: Done

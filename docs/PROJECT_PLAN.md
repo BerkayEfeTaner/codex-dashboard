@@ -20,7 +20,6 @@ Implemented pages:
 - Analytics
 - Workspaces
 - Agents
-- Orchestration
 - Capabilities
 - Activity
 - Profiles
@@ -34,7 +33,6 @@ Implemented backend endpoints:
 - `/api/summary`
 - `/api/agents`
 - `/api/agents/:id`
-- `/api/orchestration`
 - `/api/capabilities`
 - `/api/config/preview`
 - `/api/diagnostics/report`
@@ -306,7 +304,6 @@ Acceptance criteria:
 
 - Advanced activity search: Done
 - Session-to-file relationship graph: Done
-- Agent orchestration view: Done
 - Skill/plugin management view: Done
 - Config change preview: Done; safe apply flow deferred until audit, backup, and rollback are designed
 - Exportable diagnostic report: Done

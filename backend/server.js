@@ -9,12 +9,12 @@ const {
   readThreadStats, 
   readRecentLogs, 
   countRecentLogs, 
+  readLogStats,
   readWorkspaces, 
   buildSummary, 
   buildHealthSummary, 
   buildAnalyticsPayload, 
   buildSystemSummary,
-  buildOrchestrationPayload,
   buildCapabilitiesPayload,
   buildProfilesPayload,
   buildDiagnosticReportPayload,
@@ -53,7 +53,6 @@ app.get('/api/agents/:id', (req, res) => {
   res.json(buildAgentDetailPayload(agent));
 });
 
-app.get('/api/orchestration', (req, res) => res.json(buildOrchestrationPayload()));
 app.get('/api/capabilities', (req, res) => res.json(buildCapabilitiesPayload()));
 app.get('/api/profiles', (req, res) => res.json(buildProfilesPayload()));
 app.post('/api/config/preview', (req, res) => res.json(buildConfigPreviewPayload(req.body || {})));
@@ -73,12 +72,22 @@ app.get('/api/sessions/:id', (req, res) => {
 });
 
 app.get('/api/activity', (req, res) => {
-  const filters = { ...req.query, limit: clampLimit(req.query.limit, 50, 200), offset: clampOffset(req.query.offset) };
+  const filters = {
+    level: req.query.level || '',
+    target: req.query.target || '',
+    threadId: req.query.threadId || '',
+    query: req.query.query || '',
+    from: req.query.from || '',
+    to: req.query.to || '',
+    limit: clampLimit(req.query.limit, 50, 200),
+    offset: clampOffset(req.query.offset)
+  };
   const total = countRecentLogs(filters);
   res.json({ 
     activity: readRecentLogs(filters), 
-    stats: { total }, // Simplified
-    pagination: { ...filters, total, hasNext: filters.offset + filters.limit < total },
+    stats: { ...readLogStats(), total },
+    filters,
+    pagination: { limit: filters.limit, offset: filters.offset, total, hasNext: filters.offset + filters.limit < total },
     refreshedAt: new Date().toISOString() 
   });
 });

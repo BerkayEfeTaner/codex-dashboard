@@ -12,7 +12,7 @@ The dashboard is read-only at the MVP stage. Missing, unreadable, or malformed s
 | `~/.codex/agents/*.md` | Markdown | Local role/profile notes fallback when no TOML subagents exist | Empty profile-note list |
 | `dashboard-agents.json` | JSON | Legacy fallback catalog only; not the primary Codex subagent source | Empty fallback list |
 | `dashboard-config.json` | JSON | Profiles, active profile, and config preview source | Empty profile list, no active profile, blocked preview apply |
-| `dashboard-agent-sessions.json` | JSON | Agent session count and orchestration session links | Empty session count |
+| `dashboard-agent-sessions.json` | JSON | Agent session count | Empty session count |
 | `dashboard-review-history.json` | JSON | Review history count | Empty review history |
 | `version.json` | JSON | Codex version metadata | Empty object |
 | `history.jsonl` | JSONL | Recent history preview | Empty list |
@@ -30,7 +30,7 @@ The dashboard is read-only at the MVP stage. Missing, unreadable, or malformed s
 
 | Source | Current Tables Used | Current Usage | Expected Fallback |
 | --- | --- | --- | --- |
-| `state_5.sqlite` | `threads` | Session/thread list, thread detail, thread stats, orchestration thread links, trend analytics, and workspace inventory | Empty thread list/detail/workspace list and zero stats |
+| `state_5.sqlite` | `threads` | Session/thread list, thread detail, thread stats, trend analytics, and workspace inventory | Empty thread list/detail/workspace list and zero stats |
 | `logs_2.sqlite` | `logs` | Paginated activity timeline, related session activity, log stats, trend analytics, and per-workspace log counts | Empty activity list and zero stats |
 
 ## Derived Backend Data
@@ -40,10 +40,9 @@ The dashboard is read-only at the MVP stage. Missing, unreadable, or malformed s
 | `counts` | Subagents/profile notes, skills, config, sessions, review history, thread stats, log stats | Used by Overview |
 | `system.threadStats` | `state_5.sqlite` | Total, active, archived, by model, by approval, by sandbox |
 | `system.logStats` | `logs_2.sqlite` | Total, by level, recent targets |
-| `orchestration` | Agents, agent sessions, recent threads | Read-only operating map from TOML/profile discovery and local thread links |
 | `capabilities` | Official skill files and plugin manifests | Read-only skill/plugin inventory, category counts, policy summaries, and source status |
 | `configPreview` | `dashboard-config.json` plus draft payload | Read-only diff, validation checks, unsupported fields, and blocked apply state |
-| `diagnosticReport` | Health, config validation, system stats, capabilities, orchestration, capped recent history | Read-only export package for support, audits, and release checks |
+| `diagnosticReport` | Health, config validation, system stats, capabilities, capped recent history | Read-only export package for support, audits, and release checks |
 | `analyticsTrends` | `state_5.sqlite`, `logs_2.sqlite` | UTC day buckets, totals, averages, and capped model/target/level distributions |
 | `usage.rateLimits` | `sessions/**/*.jsonl` | Real Codex 5-hour and weekly rate-limit percentages when local session events expose `rate_limits` |
 | `usage.periods` | `state_5.sqlite`, `logs_2.sqlite`, optional env/config limits | Rolling 24h and 7d local usage with remaining tokens only when explicit dashboard limits are configured |

@@ -65,15 +65,6 @@ async function checkAgents() {
   pass('/api/agents/:id');
 }
 
-async function checkOrchestration() {
-  const orchestration = await fetchJson('/api/orchestration');
-  assert(Array.isArray(orchestration.agents), '/api/orchestration must include agents array');
-  assert(Array.isArray(orchestration.lanes), '/api/orchestration must include lanes array');
-  assert(Array.isArray(orchestration.edges), '/api/orchestration must include edges array');
-  assert(orchestration.stats && typeof orchestration.stats === 'object', '/api/orchestration must include stats');
-  pass('/api/orchestration');
-}
-
 async function checkCapabilities() {
   const capabilities = await fetchJson('/api/capabilities');
   assert(Array.isArray(capabilities.skills), '/api/capabilities must include skills array');
@@ -191,7 +182,6 @@ async function main() {
   await checkHealth();
   await checkSummary();
   await checkAgents();
-  await checkOrchestration();
   await checkCapabilities();
   await checkProfiles();
   await checkConfigPreview();

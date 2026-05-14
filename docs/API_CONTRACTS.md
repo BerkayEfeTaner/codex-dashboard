@@ -246,57 +246,6 @@ Rules:
 - `lastKnownUsage` is nullable because local Codex thread data does not always identify an agent.
 - Unknown agent ids return `404`.
 
-## `GET /api/orchestration`
-
-Purpose: Read-only operating map derived from local Codex subagent discovery and recent thread data.
-
-Current response:
-
-```json
-{
-  "agents": [
-    {
-      "id": "ai-ops-team-team-lead",
-      "name": "team-lead",
-      "team": "ai-ops-team",
-      "model": "gpt-5.4-mini",
-      "reasoningEffort": "medium",
-      "skills": [],
-      "status": "configured",
-      "recentThreads": [],
-      "sessions": [],
-      "metrics": {
-        "skillCount": 0,
-        "threadCount": 0,
-        "sessionCount": 0
-      }
-    }
-  ],
-  "lanes": [],
-  "edges": [],
-  "unmappedThreads": [],
-  "stats": {
-    "agents": 0,
-    "recentlyActiveAgents": 0,
-    "configuredOnlyAgents": 0,
-    "skills": 0,
-    "links": 0,
-    "agentSessions": 0,
-    "unmappedThreads": 0
-  },
-  "source": {},
-  "refreshedAt": "2026-05-07T13:34:04.723Z"
-}
-```
-
-Rules:
-
-- This endpoint is read-only and must not start, stop, or mutate agents.
-- The agent list must use the same source priority as `/api/agents`.
-- Agent session source status is reported from `dashboard-agent-sessions.json`.
-- Thread links are derived from recent rows in `state_5.sqlite` and capped so the route stays suitable for UI loading.
-- `lanes` and `edges` are presentation-ready summaries; the raw source files remain available through `source`.
-
 ## `GET /api/capabilities`
 
 Purpose: Read-only skill and plugin inventory for Codex capabilities.
@@ -654,10 +603,6 @@ Current response:
     "logs": {},
     "recentThreads": [],
     "recentActivity": []
-  },
-  "orchestration": {
-    "stats": {},
-    "unmappedThreads": []
   },
   "sources": {
     "files": []

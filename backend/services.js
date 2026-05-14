@@ -145,6 +145,83 @@ function countRecentLogs(options = {}) {
   try { return db.prepare(`SELECT COUNT(*) AS count FROM logs WHERE ${conditions.join(' AND ')}`).get(...params).count; } catch { return 0; } finally { db.close(); }
 }
 
+function buildSessionFileGraph(thread, activity) {
+  const filesByPath = new Map();
+  const linksByKey = new Map();
+
+  activity.forEach((event) => {
+    const modulePath = event.modulePath || event.file || null;
+    const filePath = event.file || (thread.cwd && modulePath ? path.join(thread.cwd, modulePath) : modulePath);
+    if (!filePath) return;
+
+    const existingFile = filesByPath.get(filePath) || {
+      path: filePath,
+      modulePath,
+      events: 0,
+      levels: {},
+      targets: {},
+      firstSeen: null,
+      firstSeenIso: null,
+      lastSeen: null,
+      lastSeenIso: null
+    };
+
+    existingFile.events += 1;
+    existingFile.levels[event.level || 'unknown'] = (existingFile.levels[event.level || 'unknown'] || 0) + 1;
+    existingFile.targets[event.target || 'unknown'] = (existingFile.targets[event.target || 'unknown'] || 0) + 1;
+    if (existingFile.firstSeen === null || event.ts < existingFile.firstSeen) {
+      existingFile.firstSeen = event.ts;
+      existingFile.firstSeenIso = event.tsIso;
+    }
+    if (existingFile.lastSeen === null || event.ts > existingFile.lastSeen) {
+      existingFile.lastSeen = event.ts;
+      existingFile.lastSeenIso = event.tsIso;
+    }
+    filesByPath.set(filePath, existingFile);
+
+    const linkKey = `${filePath}:${event.target || 'unknown'}:${event.level || 'unknown'}`;
+    const existingLink = linksByKey.get(linkKey) || {
+      threadId: thread.id,
+      filePath,
+      target: event.target || 'unknown',
+      level: event.level || 'unknown',
+      events: 0,
+      firstSeen: null,
+      firstSeenIso: null,
+      lastSeen: null,
+      lastSeenIso: null
+    };
+    existingLink.events += 1;
+    if (existingLink.firstSeen === null || event.ts < existingLink.firstSeen) {
+      existingLink.firstSeen = event.ts;
+      existingLink.firstSeenIso = event.tsIso;
+    }
+    if (existingLink.lastSeen === null || event.ts > existingLink.lastSeen) {
+      existingLink.lastSeen = event.ts;
+      existingLink.lastSeenIso = event.tsIso;
+    }
+    linksByKey.set(linkKey, existingLink);
+  });
+
+  const files = [...filesByPath.values()]
+    .sort((a, b) => b.events - a.events)
+    .slice(0, 24)
+    .map(({ firstSeen, lastSeen, ...file }) => file);
+  const links = [...linksByKey.values()]
+    .sort((a, b) => b.events - a.events)
+    .slice(0, 50)
+    .map(({ firstSeen, lastSeen, ...link }) => link);
+
+  return {
+    files,
+    links,
+    totals: {
+      files: files.length,
+      events: activity.filter((event) => event.file || event.modulePath).length
+    }
+  };
+}
+
 // --- Workspaces ---
 function workspaceId(workspacePath) {
   return crypto.createHash('sha1').update(String(workspacePath || 'unknown')).digest('hex').slice(0, 12);
@@ -186,13 +263,17 @@ function summarizeWorkspaceBuckets(rows, limit) {
 
 function readWorkspaces(options = {}) {
   const limit = clampLimit(options.limit, 24, 100);
+  const source = {
+    threads: checkSqliteAvailability('state_5.sqlite'),
+    logs: checkSqliteAvailability('logs_2.sqlite')
+  };
   const db = openReadonlyDatabase('state_5.sqlite');
-  if (!db) return { workspaces: [], stats: {}, limit, refreshedAt: new Date().toISOString() };
+  if (!db) return { workspaces: [], stats: {}, source, limit, refreshedAt: new Date().toISOString() };
   try {
     const rows = db.prepare(`SELECT ${selectThreadFields()} FROM threads ORDER BY updated_at DESC LIMIT 1000`).all();
     const workspaces = summarizeWorkspaceBuckets(rows, limit);
     const stats = workspaces.reduce((acc, w) => { acc.total++; acc.readable += w.readable ? 1 : 0; acc.missing += w.exists ? 0 : 1; acc.threads += w.threadCount; acc.activeThreads += w.activeThreads; acc.archivedThreads += w.archivedThreads; acc.logEvents += w.logEvents; acc.tokensUsed += w.tokensUsed; return acc; }, { total: 0, readable: 0, missing: 0, threads: 0, activeThreads: 0, archivedThreads: 0, logEvents: 0, tokensUsed: 0 });
-    return { workspaces, stats, limit, refreshedAt: new Date().toISOString() };
+    return { workspaces, stats, source, limit, refreshedAt: new Date().toISOString() };
   } finally { db.close(); }
 }
 
@@ -278,80 +359,13 @@ function buildSystemSummary(profile) {
   });
 }
 
-function buildOrchestrationPayload() {
-  const agents = readAgents();
-  const threads = readThreads(100);
-  const enrichedAgents = agents.map((agent) => {
-    const identity = getAgentIdentitySet(agent);
-    const matchedThreads = threads.filter((thread) => threadMatchesAgent(thread, identity));
-    return {
-      ...agent,
-      status: matchedThreads.length > 0 ? 'recent' : 'configured',
-      metrics: {
-        threadCount: matchedThreads.length,
-        skillCount: Array.isArray(agent.skills) ? agent.skills.length : 0
-      }
-    };
-  });
-  const edges = enrichedAgents.flatMap((agent) => {
-    const identity = getAgentIdentitySet(agent);
-    return threads
-      .filter((thread) => threadMatchesAgent(thread, identity))
-      .slice(0, 5)
-      .map((thread) => ({
-        id: `${agent.id}:${thread.id}`,
-        from: agent.id,
-        to: thread.id,
-        label: thread.title || thread.id,
-        type: 'agent-thread',
-        updatedAtIso: thread.updatedAtIso
-      }));
-  });
-  const configuredAgents = enrichedAgents.filter((agent) => agent.status !== 'recent');
-
-  return {
-    agents: enrichedAgents,
-    lanes: [
-      {
-        id: 'recent-agents',
-        label: 'Recently active agents',
-        agents: enrichedAgents.filter((agent) => agent.status === 'recent')
-      },
-      {
-        id: 'configured-agents',
-        label: 'Configured agents',
-        agents: configuredAgents
-      },
-      {
-        id: 'recent-threads',
-        label: 'Recent sessions',
-        threads: threads.slice(0, 12)
-      }
-    ],
-    edges,
-    stats: {
-      agents: enrichedAgents.length,
-      recentlyActiveAgents: enrichedAgents.filter((agent) => agent.status === 'recent').length,
-      skills: enrichedAgents.reduce((count, agent) => count + (Array.isArray(agent.skills) ? agent.skills.length : 0), 0),
-      links: edges.length,
-      agentSessions: edges.length
-    },
-    source: {
-      agents: enrichedAgents[0]?.sourcePath ? statPath('agents', enrichedAgents[0].sourcePath) : statSourceFile(dashboardFiles.agents),
-      agentSessions: statSourceFile(dashboardFiles.agentSessions),
-      threads: checkSqliteAvailability('state_5.sqlite')
-    },
-    refreshedAt: new Date().toISOString()
-  };
-}
-
 // --- Summary ---
 function buildSummary() {
   const agents = readAgents(); const threads = readThreads(24); const activity = readRecentLogs(32);
   const capabilities = buildCapabilitiesPayload();
   const config = readJsonFile(path.join(CODEX_DIR, dashboardFiles.config), { profiles: [] });
   const activeProfile = config.profiles?.find(p => p.id === config.activeProfileId) || null;
-  return { refreshedAt: new Date().toISOString(), agents, threads, activity, health: buildHealthSummary(), usage: buildUsageSummary(), system: buildSystemSummary(activeProfile), counts: { agents: agents.length, skills: capabilities.stats.skills, threads: threads.length, logs: activity.length } };
+  return { refreshedAt: new Date().toISOString(), codexHome: CODEX_DIR, agents, threads, activity, health: buildHealthSummary(), usage: buildUsageSummary(), system: buildSystemSummary(activeProfile), counts: { agents: agents.length, skills: capabilities.stats.skills, threads: threads.length, logs: activity.length } };
 }
 
 function readPackageJson(relativePath) {
@@ -512,13 +526,35 @@ function buildConfigPreviewPayload(draft = {}) {
 function buildDiagnosticReportPayload() {
   const health = buildHealthSummary();
   const profiles = buildProfilesPayload();
+  const activeProfile = profiles.activeProfile;
+  const profileValidation = {
+    valid: profiles.profiles.length === 0 || Boolean(activeProfile),
+    checks: [{
+      id: 'active-profile',
+      label: 'Active profile',
+      ok: profiles.profiles.length === 0 || Boolean(activeProfile)
+    }]
+  };
 
   return {
-    report: { version: 1, generatedAt: new Date().toISOString(), scope: 'read-only diagnostics' },
+    report: {
+      title: 'Codex Dashboard Diagnostic Report',
+      version: 1,
+      formatVersion: 1,
+      generatedAt: new Date().toISOString(),
+      scope: 'read-only diagnostics'
+    },
     environment: { node: process.version, platform: `${os.type()} ${os.release()}`, codexHome: CODEX_DIR },
     health,
-    profiles: { count: profiles.profiles.length, activeProfile: profiles.activeProfile },
-    system: buildSystemSummary(profiles.activeProfile),
+    profile: {
+      activeProfileId: activeProfile?.id || null,
+      activeProfile,
+      totalProfiles: profiles.profiles.length,
+      validation: profileValidation,
+      source: profiles.source
+    },
+    profiles: { count: profiles.profiles.length, activeProfile },
+    system: buildSystemSummary(activeProfile),
     risks: health.ok ? [] : ['Codex home sources are degraded.']
   };
 }
@@ -537,14 +573,20 @@ function buildAgentDetailPayload(agent) {
 }
 
 function buildSessionDetailPayload(thread) {
+  const activity = readRecentLogs({ threadId: thread.id, limit: 50 });
+
   return {
     thread,
-    activity: readRecentLogs({ threadId: thread.id, limit: 50 }),
-    source: checkSqliteAvailability('state_5.sqlite'),
+    activity,
+    fileGraph: buildSessionFileGraph(thread, activity),
+    source: {
+      threads: checkSqliteAvailability('state_5.sqlite'),
+      logs: checkSqliteAvailability('logs_2.sqlite')
+    },
     refreshedAt: new Date().toISOString()
   };
 }
 
 module.exports = {
-  readAgents, readThreads, readThreadById, readThreadStats, readRecentLogs, countRecentLogs, readWorkspaces, readUsageLimitSettings, readLogStats, buildSummary, buildHealthSummary, buildAnalyticsPayload, buildSystemSummary, buildOrchestrationPayload, buildCapabilitiesPayload, buildProfilesPayload, buildDiagnosticReportPayload, buildReleaseHealth, buildConfigPreviewPayload, buildAgentDetailPayload, buildSessionDetailPayload
+  readAgents, readThreads, readThreadById, readThreadStats, readRecentLogs, countRecentLogs, readWorkspaces, readUsageLimitSettings, readLogStats, buildSummary, buildHealthSummary, buildAnalyticsPayload, buildSystemSummary, buildCapabilitiesPayload, buildProfilesPayload, buildDiagnosticReportPayload, buildReleaseHealth, buildConfigPreviewPayload, buildAgentDetailPayload, buildSessionDetailPayload
 };

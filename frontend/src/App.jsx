@@ -7,7 +7,6 @@ const OverviewPage = lazy(() => import('./pages/dashboard/OverviewPage.jsx'));
 const AnalyticsPage = lazy(() => import('./pages/data/AnalyticsPage.jsx'));
 const WorkspacesPage = lazy(() => import('./pages/data/WorkspacesPage.jsx'));
 const AgentsPage = lazy(() => import('./pages/ai/AgentsPage.jsx'));
-const OrchestrationPage = lazy(() => import('./pages/ai/OrchestrationPage.jsx'));
 const CapabilitiesPage = lazy(() => import('./pages/ai/CapabilitiesPage.jsx'));
 const ActivityPage = lazy(() => import('./pages/data/ActivityPage.jsx'));
 const ProfilesPage = lazy(() => import('./pages/admin/ProfilesPage.jsx'));
@@ -31,7 +30,6 @@ export default function App() {
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/workspaces" element={<WorkspacesPage />} />
           <Route path="/agents" element={<AgentsPage />} />
-          <Route path="/orchestration" element={<OrchestrationPage />} />
           <Route path="/capabilities" element={<CapabilitiesPage />} />
           <Route path="/activity" element={<ActivityPage />} />
           <Route path="/profiles" element={<ProfilesPage />} />

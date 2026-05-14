@@ -87,4 +87,10 @@ describe('Codex Dashboard API', () => {
 
     assert.equal(response.status, 404);
   });
+
+  it('does not expose orchestration endpoints', async () => {
+    const response = await fetch(`${baseUrl}/api/orchestration`);
+
+    assert.equal(response.status, 404);
+  });
 });

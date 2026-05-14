@@ -37,10 +37,6 @@ export function fetchAgentDetail(id) {
   return requestJson(`/api/agents/${encodeURIComponent(id)}`);
 }
 
-export function fetchOrchestration() {
-  return requestJson('/api/orchestration');
-}
-
 export function fetchCapabilities() {
   return requestJson('/api/capabilities');
 }
