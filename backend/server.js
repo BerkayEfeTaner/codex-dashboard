@@ -98,6 +98,12 @@ app.get('/api/release/health', (req, res) => res.json(buildReleaseHealth()));
 // --- Server Startup ---
 
 if (require.main === module) {
+  try {
+    buildSummary();
+  } catch (error) {
+    console.warn('Summary warmup failed:', error.message);
+  }
+
   app.listen(PORT, () => {
     console.log(`Codex Dashboard API running on http://localhost:${PORT}`);
     console.log(`Reading Codex data from ${CODEX_DIR}`);

@@ -3,6 +3,10 @@ const path = require('path');
 const { CODEX_DIR } = require('../constants');
 const { readJsonFile, readJsonlTail, statPath } = require('../utils');
 const { checkSqliteAvailability, openReadonlyDatabase } = require('../db');
+const { createTtlCache } = require('./cache');
+
+const USAGE_SUMMARY_TTL_MS = 15000;
+const usageSummaryCache = createTtlCache(USAGE_SUMMARY_TTL_MS);
 
 function readUsageLimitSettings() {
   const config = readJsonFile(path.join(CODEX_DIR, 'dashboard-limits.json'), {});
@@ -204,23 +208,25 @@ function buildUsagePeriod({ key, label, window, days, limit, nowSeconds, nowIso 
 }
 
 function buildUsageSummary() {
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const nowIso = new Date().toISOString();
-  const limits = readUsageLimitSettings();
+  return usageSummaryCache.get(() => {
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const nowIso = new Date().toISOString();
+    const limits = readUsageLimitSettings();
 
-  return {
-    source: {
-      type: 'local-codex-sqlite',
-      threads: checkSqliteAvailability('state_5.sqlite'),
-      logs: checkSqliteAvailability('logs_2.sqlite')
-    },
-    rateLimits: buildCodexRateLimitSummary(),
-    refreshedAt: nowIso,
-    periods: {
-      daily: buildUsagePeriod({ key: 'daily', label: 'Daily', window: 'rolling_24h', days: 1, limit: limits.daily, nowSeconds, nowIso }),
-      weekly: buildUsagePeriod({ key: 'weekly', label: 'Weekly', window: 'rolling_7d', days: 7, limit: limits.weekly, nowSeconds, nowIso })
-    }
-  };
+    return {
+      source: {
+        type: 'local-codex-sqlite',
+        threads: checkSqliteAvailability('state_5.sqlite'),
+        logs: checkSqliteAvailability('logs_2.sqlite')
+      },
+      rateLimits: buildCodexRateLimitSummary(),
+      refreshedAt: nowIso,
+      periods: {
+        daily: buildUsagePeriod({ key: 'daily', label: 'Daily', window: 'rolling_24h', days: 1, limit: limits.daily, nowSeconds, nowIso }),
+        weekly: buildUsagePeriod({ key: 'weekly', label: 'Weekly', window: 'rolling_7d', days: 7, limit: limits.weekly, nowSeconds, nowIso })
+      }
+    };
+  });
 }
 
 module.exports = {
