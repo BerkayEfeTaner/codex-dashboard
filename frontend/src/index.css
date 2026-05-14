@@ -723,6 +723,13 @@ h3 {
   margin-top: 14px;
 }
 
+.scroll-list {
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+}
+
 .detail-list > div,
 .compact-row,
 .history-row,
@@ -1271,6 +1278,13 @@ h3 {
 .activity-panel,
 .session-panel {
   min-height: calc(100vh - 116px);
+}
+
+.execution-timeline {
+  max-height: 520px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
 }
 
 .timeline-row {

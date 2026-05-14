@@ -6,6 +6,7 @@ import { InlineError } from '../../components/ui/InlineError.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { useSessionDetail } from '../../hooks/useSessionDetail.js';
 import { useSessions } from '../../hooks/useSessions.js';
+import { activityDisplay, visibleCodexActivity } from '../../utils/activityDisplay.js';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
 function displayFileName(path) {
@@ -21,7 +22,7 @@ export default function SessionsPage() {
   const activeThreadId = selectedThreadId || threads[0]?.id || '';
   const { data: detail, loading: detailLoading, error: detailError } = useSessionDetail(activeThreadId);
   const activeThread = detail?.thread;
-  const relatedActivity = detail?.activity || [];
+  const relatedActivity = visibleCodexActivity(detail?.activity);
   const fileGraph = detail?.fileGraph || { files: [], links: [], totals: { files: 0, events: 0 } };
   const relatedFiles = fileGraph.files || [];
   const maxFileEvents = Math.max(...relatedFiles.map((file) => file.events || 0), 1);
@@ -93,7 +94,7 @@ export default function SessionsPage() {
               <Detail label="Files" value={formatCompact(fileGraph.totals?.files || 0)} />
               <Detail label="Linked events" value={formatCompact(fileGraph.totals?.events || 0)} />
             </div>
-            <div className="file-relationship-list">
+            <div className="file-relationship-list scroll-list">
               {relatedFiles.length === 0 ? (
                 <EmptyState title="No linked files" description="No file entries are linked to this session yet." />
               ) : (
@@ -115,16 +116,19 @@ export default function SessionsPage() {
               )}
             </div>
             <h2 className="section-title">Related Activity</h2>
-            <div className="compact-list">
+            <div className="compact-list scroll-list">
               {relatedActivity.length === 0 ? (
                 <EmptyState title="No related activity" description="No log entries are linked to this session yet." />
               ) : (
-                relatedActivity.map((entry) => (
-                  <div className="compact-row" key={entry.id}>
-                    <strong>{entry.target || 'unknown target'}</strong>
-                    <span>{entry.level || '-'} / {formatDate(entry.tsIso)}</span>
-                  </div>
-                ))
+                relatedActivity.map((entry) => {
+                  const display = activityDisplay(entry);
+                  return (
+                    <div className="compact-row" key={entry.id}>
+                      <strong>{display.title}</strong>
+                      <span>{display.detail} / {entry.level || '-'} / {formatDate(entry.tsIso)}</span>
+                    </div>
+                  );
+                })
               )}
             </div>
           </>

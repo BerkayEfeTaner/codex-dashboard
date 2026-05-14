@@ -17,6 +17,7 @@ import { InlineError } from '../../components/ui/InlineError.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { StatCard } from '../../components/ui/StatCard.jsx';
 import { useAnalyticsTrends } from '../../hooks/useAnalyticsTrends.js';
+import { activityDisplay, isInternalActivity } from '../../utils/activityDisplay.js';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
 const ranges = [7, 14, 30, 90];
@@ -47,6 +48,18 @@ function DistributionList({ title, subtitle, items, emptyTitle }) {
   );
 }
 
+function targetDistributionItems(items = []) {
+  const grouped = new Map();
+
+  items.forEach((item) => {
+    const display = activityDisplay({ target: item.name });
+    const name = isInternalActivity(item.name) ? 'Runtime telemetry' : display.title;
+    grouped.set(name, (grouped.get(name) || 0) + (item.count || 0));
+  });
+
+  return Array.from(grouped.entries()).map(([name, count]) => ({ name, count }));
+}
+
 export default function AnalyticsPage() {
   const [days, setDays] = useState(14);
   const { data, loading, error } = useAnalyticsTrends(days);
@@ -59,6 +72,7 @@ export default function AnalyticsPage() {
   const totals = data?.totals || {};
   const averages = data?.averages || {};
   const distributions = data?.distributions || {};
+  const activitySignalDistribution = targetDistributionItems(distributions.targets || []);
 
   return (
     <div className="analytics-page page-grid">
@@ -150,9 +164,9 @@ export default function AnalyticsPage() {
         emptyTitle="No model usage"
       />
       <DistributionList
-        title="Targets"
-        subtitle="Most common log targets in range"
-        items={distributions.targets || []}
+        title="Activity Signals"
+        subtitle="Most common Codex activity signals in range"
+        items={activitySignalDistribution}
         emptyTitle="No target data"
       />
       <DistributionList

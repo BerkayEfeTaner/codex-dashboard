@@ -30,7 +30,7 @@ export default function AgentsPage() {
       <section className="panel agents-list-panel">
         <PageHeader
           title="Subagents"
-          subtitle={loading ? 'Loading subagents...' : `${filtered.length} visible Codex records`}
+          subtitle={loading ? 'Loading subagents...' : `${filtered.length} visible delegation profiles`}
           action={(
             <label className="search-box">
               <Search size={16} aria-hidden="true" />
@@ -74,7 +74,7 @@ export default function AgentsPage() {
       <section className="panel agent-detail-panel">
         <div className="panel-header">
           <div>
-            <span className="eyebrow">Selected record</span>
+            <span className="eyebrow">Selected subagent</span>
             <h2>{detail?.name || detail?.id || 'Subagent detail'}</h2>
           </div>
           {detail?.team && <Badge color="light">{detail.team}</Badge>}

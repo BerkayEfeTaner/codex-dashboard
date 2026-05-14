@@ -20,6 +20,11 @@ function matchesWorkspace(workspace, query) {
   return haystack.includes(query.toLowerCase());
 }
 
+function displayWorkspaceName(name) {
+  if (!name) return 'Unknown workspace';
+  return String(name).split(/[\\/]/).filter(Boolean).pop() || name;
+}
+
 function TopMap({ title, items }) {
   const rows = Object.entries(items || {}).sort((a, b) => b[1] - a[1]).slice(0, 4);
 
@@ -37,11 +42,13 @@ function TopMap({ title, items }) {
 }
 
 function WorkspaceCard({ workspace }) {
+  const workspaceName = displayWorkspaceName(workspace.name);
+
   return (
     <article className="workspace-card">
       <div className="workspace-card-head">
         <div>
-          <h3>{workspace.name}</h3>
+          <h3>{workspaceName}</h3>
           <span>{workspace.readable ? 'Workspace available' : 'Workspace not reachable'}</span>
         </div>
         <Badge color={workspace.readable ? 'success' : 'warning'}>

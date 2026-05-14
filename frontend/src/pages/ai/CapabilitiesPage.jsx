@@ -109,9 +109,9 @@ export default function CapabilitiesPage() {
 
       <div className="stat-grid">
         <StatCard label="Skills" value={formatCompact(stats.skills || 0)} icon={Layers3} />
-        <StatCard label="Plugins" value={formatCompact(stats.plugins || 0)} icon={Puzzle} />
-        <StatCard label="Categories" value={formatCompact(stats.pluginCategories || 0)} icon={Boxes} />
-        <StatCard label="Auth plugins" value={formatCompact(stats.pluginsRequiringAuth || 0)} icon={KeyRound} />
+        <StatCard label="Extensions" value={formatCompact(stats.plugins || 0)} icon={Puzzle} />
+        <StatCard label="Skill groups" value={formatCompact(stats.pluginCategories || 0)} icon={Boxes} />
+        <StatCard label="Auth needed" value={formatCompact(stats.pluginsRequiringAuth || 0)} icon={KeyRound} />
       </div>
 
       <section className="panel wide">
@@ -120,8 +120,8 @@ export default function CapabilitiesPage() {
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search skills and plugin manifests"
-            aria-label="Search skills and plugin manifests"
+            placeholder="Search skills and extensions"
+            aria-label="Search skills and extensions"
           />
         </div>
       </section>
@@ -131,7 +131,7 @@ export default function CapabilitiesPage() {
           <div className="panel-header">
             <div>
               <span className="eyebrow">Skills</span>
-              <h2>Available workflows</h2>
+              <h2>Reusable instructions</h2>
             </div>
             <Badge color="light">{filteredSkills.length}</Badge>
           </div>
@@ -147,13 +147,13 @@ export default function CapabilitiesPage() {
         <section className="panel">
           <div className="panel-header">
             <div>
-              <span className="eyebrow">Plugins</span>
-              <h2>Installed manifests</h2>
+              <span className="eyebrow">Extensions</span>
+              <h2>Installed extension manifests</h2>
             </div>
             <Badge color="light">{filteredPlugins.length}</Badge>
           </div>
           {filteredPlugins.length === 0 ? (
-            <EmptyState title="No plugins" description="No plugin records matched the current filter." />
+            <EmptyState title="No extensions" description="No extension records matched the current filter." />
           ) : (
             <div className="capability-list">
               {filteredPlugins.map((plugin) => <PluginCard plugin={plugin} key={plugin.id} />)}
@@ -173,8 +173,8 @@ export default function CapabilitiesPage() {
         <div className="source-grid">
           <SourceRow label="Skills" source={data?.source?.skillsDirectory} />
           <SourceRow label="Project skills" source={data?.source?.projectSkillsDirectory} />
-          <SourceRow label="Plugin cache" source={data?.source?.pluginCache} />
-          <SourceRow label="Plugin manifests" source={data?.source?.pluginManifests} />
+          <SourceRow label="Extension cache" source={data?.source?.pluginCache} />
+          <SourceRow label="Extension manifests" source={data?.source?.pluginManifests} />
           <SourceRow label="Marketplace" source={data?.source?.marketplace} />
         </div>
       </section>

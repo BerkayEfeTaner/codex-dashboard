@@ -5,6 +5,7 @@ import { Detail } from '../../components/ui/Detail.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { StatCard } from '../../components/ui/StatCard.jsx';
+import { activityDisplay, visibleCodexActivity } from '../../utils/activityDisplay.js';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
 const conceptSignals = [
@@ -16,55 +17,8 @@ const conceptSignals = [
   { label: 'Approval', value: 'controls risky actions', detail: 'Permission layer', tone: 'boundary' }
 ];
 
-const internalActivityTargets = [
-  'codex_api::endpoint::responses_websocket',
-  'codex_app_server::outgoing_message',
-  'codex_otel.log_only',
-  'codex_otel.trace_safe',
-  'hyper_util::client::legacy::client',
-  'hyper_util::client::legacy::connect::http',
-  'hyper_util::client::legacy::pool',
-  'opentelemetry-otlp',
-  'opentelemetry_sdk'
-];
-
-function isInternalActivity(entry) {
-  return internalActivityTargets.includes(entry?.target);
-}
-
 function displayProfileValue(value) {
   return value || 'not detected';
-}
-
-function prettifyActivityTarget(target) {
-  return target.replaceAll('_', ' ').replaceAll('::', ' / ');
-}
-
-function activityDisplay(entry) {
-  const target = entry?.target || '';
-  const normalized = target.toLowerCase();
-
-  if (!target) {
-    return { title: 'Codex event', detail: 'General runtime signal' };
-  }
-
-  if (normalized.includes('tool') || normalized.includes('exec') || normalized.includes('command')) {
-    return { title: 'Tool activity', detail: prettifyActivityTarget(target) };
-  }
-
-  if (normalized.includes('file') || normalized.includes('patch') || normalized.includes('write')) {
-    return { title: 'Workspace change', detail: prettifyActivityTarget(target) };
-  }
-
-  if (normalized.includes('session') || normalized.includes('thread')) {
-    return { title: 'Session signal', detail: prettifyActivityTarget(target) };
-  }
-
-  if (normalized.includes('approval') || normalized.includes('permission')) {
-    return { title: 'Approval boundary', detail: prettifyActivityTarget(target) };
-  }
-
-  return { title: prettifyActivityTarget(target), detail: 'Codex activity signal' };
 }
 
 function usageBadgeColor(status) {
@@ -149,7 +103,7 @@ export default function OverviewPage({ summary, loading }) {
   const health = summary?.health;
   const usage = summary?.usage;
   const rateLimits = usage?.rateLimits;
-  const recentActivity = summary?.activity?.filter((entry) => !isInternalActivity(entry)).slice(0, 6) || [];
+  const recentActivity = visibleCodexActivity(summary?.activity).slice(0, 6);
 
   if (loading && !summary) return <div className="panel">Loading dashboard...</div>;
 

@@ -6,6 +6,7 @@ import { InlineError } from '../../components/ui/InlineError.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { StatCard } from '../../components/ui/StatCard.jsx';
 import { useActivity } from '../../hooks/useActivity.js';
+import { activityDisplay, visibleCodexActivity } from '../../utils/activityDisplay.js';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
 const toolSignals = [
@@ -46,7 +47,8 @@ function buildExecutionModel(activity) {
 
 export default function ExecutionPage({ summary }) {
   const { data, loading, error } = useActivity({ limit: 100 });
-  const activity = data?.activity || [];
+  const rawActivity = data?.activity || [];
+  const activity = visibleCodexActivity(rawActivity);
   const model = buildExecutionModel(activity);
   const observedSignals = toolSignals
     .map((signal) => ({ ...signal, count: model.counts[signal.id] || 0 }))
@@ -57,7 +59,7 @@ export default function ExecutionPage({ summary }) {
     <div className="page-grid execution-page">
       <PageHeader
         title="Execution"
-        subtitle={loading ? 'Loading execution signals' : `${activity.length} recent Codex activity events inspected`}
+        subtitle={loading ? 'Loading execution signals' : `${activity.length} visible Codex activity events inspected`}
         status={{ label: model.failures ? `${model.failures} needs attention` : 'normal', tone: model.failures ? 'warn' : 'ok' }}
       />
 
@@ -113,21 +115,22 @@ export default function ExecutionPage({ summary }) {
       </section>
 
       <section className="panel wide">
-        <PageHeader title="Recent Execution Events" subtitle="Latest activity with inferred execution category" />
+        <PageHeader title="Recent Execution Events" subtitle="Latest visible activity with inferred execution category" />
         {activity.length === 0 ? (
           <EmptyState title="No activity found" description="Recent Codex execution events will appear here." />
         ) : (
           <div className="timeline execution-timeline">
             {activity.slice(0, 30).map((entry) => {
               const signal = classifyEntry(entry);
+              const display = activityDisplay(entry);
               return (
                 <article className="timeline-row" key={entry.id}>
                   <Badge className={`level level-${String(entry.level || 'unknown').toLowerCase()}`} pill>
                     {signal.label}
                   </Badge>
                   <div>
-                    <strong>{entry.target || 'Codex event'}</strong>
-                    <p>{entry.message || '-'}</p>
+                    <strong>{display.title}</strong>
+                    <p>{entry.message || display.detail}</p>
                     <small>{formatDate(entry.tsIso)}{entry.threadId ? ` / session ${entry.threadId}` : ''}</small>
                   </div>
                 </article>

@@ -7,6 +7,7 @@ import { InlineError } from '../../components/ui/InlineError.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { useActivity } from '../../hooks/useActivity.js';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue.js';
+import { activityDisplay } from '../../utils/activityDisplay.js';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
 export default function ActivityPage() {
@@ -53,7 +54,7 @@ export default function ActivityPage() {
       <section className="panel activity-panel">
         <PageHeader
           title="Activity"
-          subtitle={loading ? 'Loading recent log entries' : `${pageStart}-${pageEnd} of ${pagination.total} log entries`}
+          subtitle={loading ? 'Loading recent log entries' : `${pageStart}-${pageEnd} of ${pagination.total} raw log entries`}
           action={(
             <div className="filter-bar">
               <label className="search-box">
@@ -87,8 +88,12 @@ export default function ActivityPage() {
                   setOffset(0);
                 }}
               >
-                <option value="">All targets</option>
-                {recentTargets.map((item) => <option key={item.target} value={item.target}>{item.target}</option>)}
+                <option value="">All signals</option>
+                {recentTargets.map((item) => (
+                  <option key={item.target} value={item.target}>
+                    {activityDisplay({ target: item.target }).title}
+                  </option>
+                ))}
               </select>
               <Button
                 color="light"
@@ -149,18 +154,21 @@ export default function ActivityPage() {
           />
         ) : (
           <div className="timeline">
-            {activity.map((entry) => (
-              <article className="timeline-row" key={entry.id}>
-                <Badge className={`level level-${String(entry.level || 'unknown').toLowerCase()}`} pill>
-                  {entry.level || '-'}
-                </Badge>
-                <div>
-                  <strong>{entry.target || 'unknown target'}</strong>
-                  <p>{entry.message || '-'}</p>
-                  <small>{formatDate(entry.tsIso)} {entry.threadId ? ` / ${entry.threadId}` : ''}</small>
-                </div>
-              </article>
-            ))}
+            {activity.map((entry) => {
+              const display = activityDisplay(entry);
+              return (
+                <article className="timeline-row" key={entry.id}>
+                  <Badge className={`level level-${String(entry.level || 'unknown').toLowerCase()}`} pill>
+                    {entry.level || '-'}
+                  </Badge>
+                  <div>
+                    <strong>{display.title}</strong>
+                    <p>{entry.message || display.detail}</p>
+                    <small>{display.detail} / {formatDate(entry.tsIso)} {entry.threadId ? ` / ${entry.threadId}` : ''}</small>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
         <div className="pager-actions">
@@ -193,17 +201,20 @@ export default function ActivityPage() {
             ))
           )}
         </div>
-        <h2 className="section-title">Recent Targets</h2>
+        <h2 className="section-title">Recent Signals</h2>
         <div className="compact-list">
           {recentTargets.length === 0 ? (
             <EmptyState title="No targets" description="Recent activity targets are not available yet." />
           ) : (
-            recentTargets.map((target) => (
-              <div className="compact-row" key={target.target}>
-                <strong>{target.target}</strong>
-                <span>{formatCompact(target.count)} events / {formatDate(target.lastSeenIso)}</span>
-              </div>
-            ))
+            recentTargets.map((target) => {
+              const display = activityDisplay({ target: target.target });
+              return (
+                <div className="compact-row" key={target.target}>
+                  <strong>{display.title}</strong>
+                  <span>{display.detail} / {formatCompact(target.count)} events / {formatDate(target.lastSeenIso)}</span>
+                </div>
+              );
+            })
           )}
         </div>
       </section>
