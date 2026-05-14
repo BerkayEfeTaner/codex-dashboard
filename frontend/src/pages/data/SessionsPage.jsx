@@ -57,19 +57,22 @@ export default function SessionsPage() {
                 className={`thread-row thread-row-button ${activeThreadId === thread.id ? 'selected' : ''}`}
                 key={thread.id}
                 type="button"
+                aria-pressed={activeThreadId === thread.id}
                 onClick={() => setSelectedThreadId(thread.id)}
               >
                 <div className="thread-main">
                   <span className="thread-status-dot" aria-hidden="true" />
                   <div>
-                    <strong>{thread.title || thread.id}</strong>
-                    <p>{thread.firstUserMessage || thread.model || 'No summary recorded'}</p>
+                    <div className="thread-title-line">
+                      <strong>{thread.title || thread.id}</strong>
+                      <span>{formatDate(thread.updatedAtIso)}</span>
+                    </div>
+                    <p>{thread.firstUserMessage || 'No opening message recorded'}</p>
                   </div>
                 </div>
                 <div className="thread-meta">
                   <span>{thread.model || '-'}</span>
                   <span>{thread.reasoningEffort || '-'}</span>
-                  <span>{formatDate(thread.updatedAtIso)}</span>
                 </div>
               </button>
             ))}
@@ -92,7 +95,13 @@ export default function SessionsPage() {
                 <GitBranch size={20} aria-hidden="true" />
               </div>
               <div>
-                <span>Conversation seed</span>
+                <div className="session-hero-kicker">
+                  <span>Conversation seed</span>
+                  <div>
+                    <Badge className="chip">{activeThread.model || 'model unknown'}</Badge>
+                    <Badge className="chip">{activeThread.reasoningEffort || 'reasoning unknown'}</Badge>
+                  </div>
+                </div>
                 <strong>{activeThread.title || 'Untitled session'}</strong>
                 {activeThread.firstUserMessage ? <p>{activeThread.firstUserMessage}</p> : <p>No first user message recorded.</p>}
               </div>

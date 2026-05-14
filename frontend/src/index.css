@@ -1909,6 +1909,18 @@ h3 {
   min-height: calc(100vh - 116px);
 }
 
+.session-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.session-panel .thread-list {
+  max-height: calc(100vh - 238px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+}
+
 .sessions-workbench {
   align-items: start;
   grid-template-columns: minmax(380px, 0.9fr) minmax(480px, 1.1fr);
@@ -1963,7 +1975,7 @@ h3 {
 .thread-row {
   display: grid;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
@@ -1972,7 +1984,7 @@ h3 {
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
 .thread-row-button:hover,
@@ -1985,8 +1997,8 @@ h3 {
 
 .thread-row.selected {
   border-color: var(--accent);
-  background: #f4fbf9;
-  box-shadow: inset 3px 0 0 var(--accent), 0 10px 22px rgb(20 31 39 / 8%);
+  background: #f1fbf9;
+  box-shadow: inset 4px 0 0 var(--accent), 0 12px 26px rgb(20 31 39 / 9%);
 }
 
 .thread-main {
@@ -2005,12 +2017,26 @@ h3 {
   box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1);
 }
 
+.thread-title-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.thread-title-line span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .thread-meta {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: flex-end;
   gap: 6px;
+  max-width: 148px;
 }
 
 .thread-meta span {
@@ -2046,6 +2072,20 @@ h3 {
   background: rgba(15, 118, 110, 0.08);
 }
 
+.session-hero-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.session-hero-kicker > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .session-hero span,
 .session-context-strip span {
   display: block;
@@ -2066,6 +2106,10 @@ h3 {
   font-size: 13px;
   line-height: 1.45;
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
 }
 
 .session-runtime-grid {
@@ -2281,6 +2325,10 @@ h3 {
   .agent-detail-item-wide {
     grid-column: auto;
   }
+
+  .session-panel .thread-list {
+    max-height: 520px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2315,6 +2363,18 @@ h3 {
 
   .thread-meta {
     align-items: flex-start;
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .thread-title-line,
+  .session-hero-kicker {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .session-hero-kicker > div {
     justify-content: flex-start;
   }
 
