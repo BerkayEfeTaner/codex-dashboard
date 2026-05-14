@@ -7,21 +7,6 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { useCapabilities } from '../../hooks/useCapabilities.js';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
-function matchesQuery(item, query) {
-  if (!query) return true;
-  const haystack = [
-    item.name,
-    item.displayName,
-    item.description,
-    item.scope,
-    item.category,
-    ...(item.capabilities || []),
-    ...(item.keywords || [])
-  ].filter(Boolean).join(' ').toLowerCase();
-
-  return haystack.includes(query.toLowerCase());
-}
-
 function SummaryTile({ label, value, hint, icon }) {
   return (
     <div className="capabilities-summary-tile">
@@ -35,71 +20,175 @@ function SummaryTile({ label, value, hint, icon }) {
   );
 }
 
-function SkillCard({ skill }) {
-  const capabilityFlags = [
+function getSkillFlags(skill) {
+  return [
     skill.hasScripts && 'scripts',
     skill.hasAssets && 'assets',
     skill.hasReferences && 'references'
   ].filter(Boolean);
+}
 
+function toSkillItem(skill) {
+  const flags = getSkillFlags(skill);
+
+  return {
+    id: `skill-${skill.id}`,
+    type: 'skill',
+    label: 'Skill',
+    title: skill.name,
+    description: skill.description || 'Reusable Codex instruction set',
+    badge: skill.scope,
+    badgeColor: skill.scope === 'system' ? 'secondary' : 'success',
+    mark: skill.name?.slice(0, 1)?.toUpperCase() || 'S',
+    definition: 'Task-time instruction pack',
+    meta: [
+      { label: 'Scope', value: skill.scope || 'unknown' },
+      { label: 'Updated', value: formatDate(skill.modifiedAt) },
+      { label: 'Signals', value: flags.length > 0 ? flags.join(', ') : 'instructions' }
+    ],
+    chips: flags.length > 0 ? flags : ['instructions'],
+    search: [
+      skill.name,
+      skill.description,
+      skill.scope,
+      ...flags
+    ].filter(Boolean).join(' ')
+  };
+}
+
+function toPluginItem(plugin) {
+  const displayName = plugin.displayName || plugin.name;
+  const capabilities = plugin.capabilities || [];
+  const signals = [
+    plugin.hasSkills && 'skills',
+    plugin.hasApps && 'apps',
+    plugin.policy?.authentication && plugin.policy.authentication
+  ].filter(Boolean);
+
+  return {
+    id: `extension-${plugin.id}`,
+    type: 'extension',
+    label: 'Extension',
+    title: displayName,
+    description: plugin.description || 'Codex extension manifest',
+    badge: plugin.marketplaceStatus,
+    badgeColor: plugin.marketplaceStatus === 'AVAILABLE' ? 'info' : 'light',
+    mark: displayName?.slice(0, 1)?.toUpperCase() || 'E',
+    definition: 'Installed plugin manifest',
+    meta: [
+      { label: 'Category', value: plugin.category || 'uncategorized' },
+      { label: 'Version', value: plugin.version ? `v${plugin.version}` : 'unknown' },
+      { label: 'Auth', value: plugin.policy?.authentication || 'none' }
+    ],
+    chips: capabilities.length > 0 ? capabilities : signals,
+    search: [
+      plugin.name,
+      plugin.displayName,
+      plugin.description,
+      plugin.category,
+      plugin.marketplaceStatus,
+      plugin.version,
+      plugin.policy?.authentication,
+      ...capabilities,
+      ...signals,
+      ...(plugin.keywords || [])
+    ].filter(Boolean).join(' ')
+  };
+}
+
+function matchesCatalogItem(item, query) {
+  if (!query) return true;
+  return item.search.toLowerCase().includes(query.toLowerCase());
+}
+
+function CapabilityFilterButton({ filter, active, onClick }) {
   return (
-    <article className="capability-row">
-      <div className="capability-row-mark capability-row-mark-skill" aria-hidden="true">
-        {skill.name?.slice(0, 1)?.toUpperCase() || 'S'}
-      </div>
-      <div className="capability-row-main">
-        <div className="capability-row-title">
-          <h3>{skill.name}</h3>
-          <Badge color={skill.scope === 'system' ? 'secondary' : 'success'}>{skill.scope}</Badge>
-        </div>
-        <p>{skill.description || 'Reusable Codex instruction set'}</p>
-        <div className="capability-row-meta">
-          {capabilityFlags.length > 0 ? (
-            capabilityFlags.map((flag) => <span key={flag}>{flag}</span>)
-          ) : (
-            <span>instructions</span>
-          )}
-          <span>{formatDate(skill.modifiedAt)}</span>
-        </div>
-      </div>
-    </article>
+    <button
+      type="button"
+      className={`capability-filter-button${active ? ' is-active' : ''}`}
+      onClick={onClick}
+      aria-pressed={active}
+    >
+      <span>
+        <strong>{filter.label}</strong>
+        <small>{filter.hint}</small>
+      </span>
+      <Badge color={active ? 'success' : 'light'}>{filter.count}</Badge>
+    </button>
   );
 }
 
-function PluginCard({ plugin }) {
-  const capabilities = plugin.capabilities || [];
-  const displayName = plugin.displayName || plugin.name;
+function CapabilityListRow({ item, selected, onSelect }) {
+  return (
+    <button
+      type="button"
+      className={`capability-list-row capability-list-row-${item.type}${selected ? ' is-selected' : ''}`}
+      onClick={onSelect}
+      aria-pressed={selected}
+    >
+      <span className={`capability-row-mark capability-row-mark-${item.type}`} aria-hidden="true">
+        {item.mark}
+      </span>
+      <span className="capability-list-row-main">
+        <span className="capability-list-row-title">
+          <strong>{item.title}</strong>
+          <Badge color={item.badgeColor}>{item.badge}</Badge>
+        </span>
+        <span className="capability-list-row-description">{item.description}</span>
+        <span className="capability-row-meta">
+          <span>{item.label}</span>
+          {item.meta.slice(0, 2).map((entry) => <span key={entry.label}>{entry.value}</span>)}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function CapabilityDetail({ item }) {
+  if (!item) {
+    return (
+      <EmptyState
+        title="No capability selected"
+        description="Select a skill or extension to inspect its purpose and metadata."
+      />
+    );
+  }
 
   return (
-    <article className="capability-row">
-      <div className="capability-row-mark capability-row-mark-extension" aria-hidden="true">
-        {displayName?.slice(0, 1)?.toUpperCase() || 'E'}
+    <div className="capability-detail-body">
+      <div className="capability-detail-hero">
+        <div className={`capability-row-mark capability-row-mark-${item.type}`} aria-hidden="true">
+          {item.mark}
+        </div>
+        <div>
+          <span className="eyebrow">{item.label}</span>
+          <h2>{item.title}</h2>
+          <p>{item.description}</p>
+        </div>
+        <Badge color={item.badgeColor}>{item.badge}</Badge>
       </div>
-      <div className="capability-row-main">
-        <div className="capability-row-title">
-          <h3>{displayName}</h3>
-          <Badge color={plugin.marketplaceStatus === 'AVAILABLE' ? 'info' : 'light'}>
-            {plugin.marketplaceStatus}
-          </Badge>
-        </div>
-        <p>{plugin.description || 'Codex extension manifest'}</p>
-        <div className="capability-row-meta">
-          <span>{plugin.category}</span>
-          {plugin.version && <span>v{plugin.version}</span>}
-          {plugin.policy?.authentication && <span>{plugin.policy.authentication}</span>}
-          {plugin.hasSkills && <span>skills</span>}
-          {plugin.hasApps && <span>apps</span>}
-        </div>
-        {capabilities.length > 0 && (
-          <div className="capability-row-chips">
-            {capabilities.slice(0, 3).map((capability) => (
-              <span className="chip" key={capability}>{capability}</span>
-            ))}
-            {capabilities.length > 3 && <span className="chip">+{capabilities.length - 3}</span>}
+
+      <div className="capability-definition">
+        <span>Codex meaning</span>
+        <strong>{item.definition}</strong>
+      </div>
+
+      <div className="capability-detail-grid">
+        {item.meta.map((entry) => (
+          <div className="capability-detail-item" key={entry.label}>
+            <span>{entry.label}</span>
+            <strong>{entry.value}</strong>
           </div>
-        )}
+        ))}
       </div>
-    </article>
+
+      {item.chips.length > 0 && (
+        <div className="capability-detail-chips">
+          {item.chips.slice(0, 8).map((chip) => <span className="chip" key={chip}>{chip}</span>)}
+          {item.chips.length > 8 && <span className="chip">+{item.chips.length - 8}</span>}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -118,15 +207,37 @@ function SourceRow({ label, source }) {
 export default function CapabilitiesPage() {
   const { data, loading, error } = useCapabilities();
   const [query, setQuery] = useState('');
+  const [activeType, setActiveType] = useState('all');
+  const [selectedId, setSelectedId] = useState(null);
   const stats = data?.stats || {};
 
-  const filteredSkills = useMemo(
-    () => (data?.skills || []).filter((skill) => matchesQuery(skill, query)),
-    [data?.skills, query]
+  const catalogItems = useMemo(
+    () => [
+      ...(data?.skills || []).map(toSkillItem),
+      ...(data?.plugins || []).map(toPluginItem)
+    ],
+    [data?.plugins, data?.skills]
   );
-  const filteredPlugins = useMemo(
-    () => (data?.plugins || []).filter((plugin) => matchesQuery(plugin, query)),
-    [data?.plugins, query]
+
+  const visibleItems = useMemo(
+    () => catalogItems.filter((item) => (
+      (activeType === 'all' || item.type === activeType) && matchesCatalogItem(item, query)
+    )),
+    [activeType, catalogItems, query]
+  );
+
+  const selectedItem = useMemo(
+    () => visibleItems.find((item) => item.id === selectedId) || visibleItems[0] || null,
+    [selectedId, visibleItems]
+  );
+
+  const filters = useMemo(
+    () => [
+      { id: 'all', label: 'All', hint: 'Skills + extensions', count: catalogItems.length },
+      { id: 'skill', label: 'Skills', hint: 'Reusable instructions', count: (data?.skills || []).length },
+      { id: 'extension', label: 'Extensions', hint: 'Plugin manifests', count: (data?.plugins || []).length }
+    ],
+    [catalogItems.length, data?.plugins, data?.skills]
   );
 
   return (
@@ -166,41 +277,61 @@ export default function CapabilitiesPage() {
         </div>
       </section>
 
-      <div className="capability-layout wide">
-        <section className="panel capability-panel">
+      <div className="capability-workbench wide">
+        <aside className="panel capability-filter-panel">
           <div className="panel-header capability-section-header">
             <div>
-              <span className="eyebrow">Skills</span>
-              <h2>Reusable instructions</h2>
-              <p>Instruction packs Codex can apply during a task.</p>
+              <span className="eyebrow">Catalog</span>
+              <h2>Browse</h2>
+              <p>Filter by Codex capability type.</p>
             </div>
-            <Badge color="light">{filteredSkills.length}</Badge>
           </div>
-          {filteredSkills.length === 0 ? (
-            <EmptyState title="No skills" description="No skill records matched the current filter." />
+          <div className="capability-filter-group">
+            {filters.map((filter) => (
+              <CapabilityFilterButton
+                filter={filter}
+                active={activeType === filter.id}
+                onClick={() => setActiveType(filter.id)}
+                key={filter.id}
+              />
+            ))}
+          </div>
+        </aside>
+
+        <section className="panel capability-catalog-panel">
+          <div className="panel-header capability-section-header">
+            <div>
+              <span className="eyebrow">Catalog</span>
+              <h2>{activeType === 'all' ? 'All capabilities' : filters.find((filter) => filter.id === activeType)?.label}</h2>
+              <p>{visibleItems.length} visible items</p>
+            </div>
+            <Badge color="light">{visibleItems.length}</Badge>
+          </div>
+          {visibleItems.length === 0 ? (
+            <EmptyState title="No capabilities" description="No skill or extension records matched the current filter." />
           ) : (
-            <div className="capability-list">
-              {filteredSkills.map((skill) => <SkillCard skill={skill} key={skill.id} />)}
+            <div className="capability-catalog-list">
+              {visibleItems.map((item) => (
+                <CapabilityListRow
+                  item={item}
+                  selected={selectedItem?.id === item.id}
+                  onSelect={() => setSelectedId(item.id)}
+                  key={item.id}
+                />
+              ))}
             </div>
           )}
         </section>
 
-        <section className="panel capability-panel">
+        <section className="panel capability-detail-panel">
           <div className="panel-header capability-section-header">
             <div>
-              <span className="eyebrow">Extensions</span>
-              <h2>Installed extension manifests</h2>
-              <p>Local plugin manifests and the actions they expose.</p>
+              <span className="eyebrow">Inspector</span>
+              <h2>Selected capability</h2>
+              <p>Purpose, type, and source signals.</p>
             </div>
-            <Badge color="light">{filteredPlugins.length}</Badge>
           </div>
-          {filteredPlugins.length === 0 ? (
-            <EmptyState title="No extensions" description="No extension records matched the current filter." />
-          ) : (
-            <div className="capability-list">
-              {filteredPlugins.map((plugin) => <PluginCard plugin={plugin} key={plugin.id} />)}
-            </div>
-          )}
+          <CapabilityDetail item={selectedItem} />
         </section>
       </div>
 
