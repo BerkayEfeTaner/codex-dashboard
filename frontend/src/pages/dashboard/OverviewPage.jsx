@@ -103,7 +103,7 @@ export default function OverviewPage({ summary, loading }) {
   const health = summary?.health;
   const usage = summary?.usage;
   const rateLimits = usage?.rateLimits;
-  const recentActivity = summary?.activity?.slice(0, 5) || [];
+  const recentActivity = summary?.activity?.slice(0, 12) || [];
 
   if (loading && !summary) return <div className="panel">Loading dashboard...</div>;
 
@@ -165,7 +165,7 @@ export default function OverviewPage({ summary, loading }) {
         </div>
       </section>
 
-      <section className="panel">
+      <section className="panel overview-activity-panel">
         <div className="panel-header">
           <div>
             <h2>Codex Map</h2>
@@ -194,7 +194,7 @@ export default function OverviewPage({ summary, loading }) {
         {recentActivity.length === 0 ? (
           <EmptyState title="No activity yet" description="Recent Codex log events will appear here." />
         ) : (
-          <div className="compact-list">
+          <div className="compact-list overview-activity-list">
             {recentActivity.map((entry, index) => (
               <div className="compact-row" key={`${entry.tsIso || index}-${entry.target || 'event'}`}>
                 <strong>{entry.target || 'Codex event'}</strong>

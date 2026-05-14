@@ -625,6 +625,17 @@ h3 {
   color: var(--accent);
 }
 
+.overview-activity-panel {
+  align-self: start;
+}
+
+.overview-activity-list {
+  max-height: 318px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
 .detail-list strong,
 .compact-row strong,
 .history-row strong,
