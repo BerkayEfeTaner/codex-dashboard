@@ -10,7 +10,8 @@ import {
   RefreshCw,
   ShieldCheck,
   Settings,
-  TerminalSquare
+  TerminalSquare,
+  Wrench
 } from 'lucide-react';
 import { InlineError } from '../ui/InlineError.jsx';
 
@@ -27,6 +28,7 @@ const navGroups = [
     label: 'Workflow',
     items: [
       { to: '/sessions', label: 'Sessions', icon: GitBranch },
+      { to: '/execution', label: 'Execution', icon: Wrench },
       { to: '/activity', label: 'Activity', icon: TerminalSquare },
       { to: '/analytics', label: 'Analytics', icon: BarChart3 }
     ]

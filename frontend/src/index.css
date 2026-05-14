@@ -551,6 +551,46 @@ h3 {
   font-size: 12px;
 }
 
+.execution-page > .inline-error {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.execution-signal-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.execution-signal {
+  display: grid;
+  align-items: start;
+  min-width: 0;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 12px;
+}
+
+.execution-signal svg {
+  color: var(--accent);
+}
+
+.execution-signal strong,
+.execution-signal span {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.execution-signal span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .detail-list,
 .compact-list,
 .history-list,
@@ -1193,13 +1233,14 @@ h3 {
   .advanced-filter-grid,
   .capability-layout,
   .concept-signal-grid,
+  .execution-signal-grid,
   .file-relationship-row,
   .session-policy-grid,
-    .source-grid,
-    .workspace-metrics,
-    .config-preview-summary,
-    .usage-limit-grid,
-    .stat-grid {
+  .source-grid,
+  .workspace-metrics,
+  .config-preview-summary,
+  .usage-limit-grid,
+  .stat-grid {
     grid-template-columns: 1fr;
   }
 
