@@ -148,6 +148,7 @@ export default function OverviewPage({ summary, loading }) {
   const rateLimits = usage?.rateLimits;
   const counts = summary?.counts || {};
   const recentActivity = visibleCodexActivity(summary?.activity).slice(0, 6);
+  const hasRecentActivity = recentActivity.length > 0;
   const activeProfile = summary?.activeProfile || {};
   const activeModel = activeProfile.model || summary?.system?.activeModel;
   const activeApproval = activeProfile.approvalMode || summary?.system?.activeApprovalMode;
@@ -287,37 +288,39 @@ export default function OverviewPage({ summary, loading }) {
           </div>
           <span className="pill">{recentActivity.length} shown</span>
         </div>
-        {recentActivity.length === 0 ? (
-          <div className="overview-empty-slot">
-            <div className="overview-activity-empty" role="status" aria-live="polite">
-              <span className="overview-activity-empty-icon" aria-hidden="true">
-                <Activity size={18} />
-              </span>
-              <div>
-                <strong>No recent activity</strong>
-                <p>Visible Codex events appear here after non-telemetry actions are recorded.</p>
+        <div className="overview-activity-body" key={hasRecentActivity ? 'activity-list' : 'activity-empty'}>
+          {hasRecentActivity ? (
+            <div className="compact-list overview-activity-list">
+              {recentActivity.map((entry, index) => {
+                const display = activityDisplay(entry);
+
+                return (
+                  <div className="compact-row overview-activity-row" key={`${entry.tsIso || index}-${entry.target || 'event'}`}>
+                    <div>
+                      <strong>{display.title}</strong>
+                      <span>
+                        {display.detail} - {formatDate(entry.tsIso)}
+                      </span>
+                    </div>
+                    <span className={`level level-${entry.level || 'info'}`}>{entry.level || 'info'}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="overview-empty-slot">
+              <div className="overview-activity-empty" role="status" aria-live="polite">
+                <span className="overview-activity-empty-icon" aria-hidden="true">
+                  <Activity size={18} />
+                </span>
+                <div>
+                  <strong>No recent activity</strong>
+                  <p>Visible Codex events appear here after non-telemetry actions are recorded.</p>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="compact-list overview-activity-list">
-            {recentActivity.map((entry, index) => {
-              const display = activityDisplay(entry);
-
-              return (
-                <div className="compact-row overview-activity-row" key={`${entry.tsIso || index}-${entry.target || 'event'}`}>
-                  <div>
-                    <strong>{display.title}</strong>
-                    <span>
-                      {display.detail} - {formatDate(entry.tsIso)}
-                    </span>
-                  </div>
-                  <span className={`level level-${entry.level || 'info'}`}>{entry.level || 'info'}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+          )}
+        </div>
       </section>
 
       <section className="panel overview-map-panel">
@@ -331,7 +334,6 @@ export default function OverviewPage({ summary, loading }) {
           {conceptSignals.map((item, index) => (
             <div className="codex-map-step" key={item.label}>
               <div className={`codex-map-term codex-map-term-${item.tone}`}>
-                <span className="codex-map-index">{index + 1}</span>
                 <strong>{item.label}</strong>
                 <span>{item.value}</span>
                 <small>{item.detail}</small>

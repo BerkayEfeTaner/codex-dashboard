@@ -1,0 +1,1 @@
+import{m as e,t}from"./react-Ds39IwFE.js";var n=t();function r({title:t,description:r}){return(0,n.jsxs)(`div`,{className:`empty-state`,role:`status`,children:[(0,n.jsx)(e,{size:20,"aria-hidden":`true`}),(0,n.jsxs)(`div`,{children:[(0,n.jsx)(`strong`,{children:t}),r&&(0,n.jsx)(`p`,{children:r})]})]})}export{r as t};
