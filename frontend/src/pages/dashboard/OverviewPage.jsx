@@ -2,7 +2,6 @@ import { createElement } from 'react';
 import { Activity, ArrowRight, Bot, CalendarDays, FileText, Gauge, GitBranch, Layers3, ShieldCheck, Wrench } from 'lucide-react';
 import { Badge } from 'reactstrap';
 import { Detail } from '../../components/ui/Detail.jsx';
-import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { StatCard } from '../../components/ui/StatCard.jsx';
 import { activityDisplay, visibleCodexActivity } from '../../utils/activityDisplay.js';
@@ -290,7 +289,15 @@ export default function OverviewPage({ summary, loading }) {
         </div>
         {recentActivity.length === 0 ? (
           <div className="overview-empty-slot">
-            <EmptyState title="No visible activity" description="Codex activity appears here after non-telemetry events are recorded." />
+            <div className="overview-activity-empty" role="status" aria-live="polite">
+              <span className="overview-activity-empty-icon" aria-hidden="true">
+                <Activity size={18} />
+              </span>
+              <div>
+                <strong>No recent activity</strong>
+                <p>Visible Codex events appear here after non-telemetry actions are recorded.</p>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="compact-list overview-activity-list">

@@ -961,17 +961,45 @@ h3 {
 
 .overview-empty-slot {
   display: grid;
-  min-height: 146px;
+  min-height: 124px;
+  padding: 12px;
   place-items: center;
-  border: 1px dashed #cbd8de;
+  border: 1px solid #dbe4e9;
   border-radius: 8px;
-  background: #fbfcfd;
+  background: #f8fbfc;
 }
 
-.overview-empty-slot .empty-state {
-  border: 0;
-  background: transparent;
-  box-shadow: none;
+.overview-activity-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid #dbe4e9;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #ffffff;
+}
+
+.overview-activity-empty-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--accent-strong);
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.overview-activity-empty strong {
+  display: block;
+  font-size: 14px;
+}
+
+.overview-activity-empty p {
+  margin-top: 4px;
+  line-height: 1.4;
 }
 
 .overview-activity-row {
