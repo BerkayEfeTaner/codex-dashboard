@@ -1042,6 +1042,13 @@ h3 {
   line-height: 1.45;
 }
 
+.thread-row p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .section-title {
   margin-top: 18px;
 }
@@ -1902,6 +1909,15 @@ h3 {
   min-height: calc(100vh - 116px);
 }
 
+.sessions-workbench {
+  align-items: start;
+  grid-template-columns: minmax(380px, 0.9fr) minmax(480px, 1.1fr);
+}
+
+.session-detail-panel {
+  min-height: calc(100vh - 116px);
+}
+
 .execution-timeline {
   max-height: 520px;
   overflow-y: auto;
@@ -1946,9 +1962,9 @@ h3 {
 
 .thread-row {
   display: grid;
-  align-items: start;
-  gap: 12px;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.42fr);
+  align-items: center;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .thread-row-button {
@@ -1968,13 +1984,31 @@ h3 {
 }
 
 .thread-row.selected {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 1px rgb(37 99 235 / 24%), 0 10px 22px rgb(20 31 39 / 9%);
+  border-color: var(--accent);
+  background: #f4fbf9;
+  box-shadow: inset 3px 0 0 var(--accent), 0 10px 22px rgb(20 31 39 / 8%);
+}
+
+.thread-main {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.thread-status-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1);
 }
 
 .thread-meta {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-end;
   justify-content: flex-end;
   gap: 6px;
 }
@@ -1989,15 +2023,44 @@ h3 {
   font-weight: 700;
 }
 
-.session-message {
+.session-hero {
+  display: grid;
+  align-items: start;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
   margin-top: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfcfd;
-  padding: 12px;
+  background: linear-gradient(135deg, #f5fbfa 0%, #ffffff 56%);
+  padding: 14px;
 }
 
-.session-message p {
+.session-hero-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #c8dedb;
+  border-radius: 8px;
+  color: var(--accent-strong);
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.session-hero span,
+.session-context-strip span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.session-hero strong {
+  display: block;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+
+.session-hero p {
   margin-top: 6px;
   color: var(--muted);
   font-size: 13px;
@@ -2005,11 +2068,81 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.session-runtime-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.session-runtime-grid > div {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 10px 11px;
+}
+
+.session-runtime-grid span,
+.relationship-summary span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.session-runtime-grid strong,
+.relationship-summary strong {
+  display: block;
+  min-width: 0;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.session-context-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.session-context-strip > div {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 2px 8px;
+  align-items: center;
+  border: 1px solid #d4e4e2;
+  border-radius: 8px;
+  background: #f7fbfa;
+  padding: 10px;
+}
+
+.session-context-strip svg {
+  grid-row: span 2;
+  color: var(--accent);
+}
+
+.session-context-strip strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .relationship-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 10px;
+}
+
+.relationship-summary > div {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 10px 11px;
 }
 
 .file-relationship-list {
@@ -2063,6 +2196,13 @@ h3 {
   margin-top: 18px;
 }
 
+.session-policy-grid > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 12px;
+}
+
 @media (max-width: 1180px) {
   .capability-workbench {
     grid-template-columns: 190px minmax(0, 1fr);
@@ -2107,7 +2247,9 @@ h3 {
   .execution-signal-grid,
   .file-relationship-row,
   .runtime-loop-grid,
+  .session-context-strip,
   .session-policy-grid,
+  .session-runtime-grid,
   .source-grid,
   .workspace-metrics,
   .config-preview-summary,
@@ -2172,6 +2314,7 @@ h3 {
   }
 
   .thread-meta {
+    align-items: flex-start;
     justify-content: flex-start;
   }
 

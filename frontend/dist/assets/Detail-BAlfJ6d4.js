@@ -1,0 +1,1 @@
+import{t as e}from"./react-CuZ4MEiV.js";var t=e();function n({label:e,value:n}){return(0,t.jsxs)(`div`,{children:[(0,t.jsx)(`span`,{children:e}),(0,t.jsx)(`strong`,{children:n||`-`})]})}export{n as t};

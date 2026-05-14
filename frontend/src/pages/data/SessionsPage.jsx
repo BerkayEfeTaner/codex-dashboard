@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Clock3, FileText, GitBranch, ShieldCheck } from 'lucide-react';
 import { Badge } from 'reactstrap';
 import { Detail } from '../../components/ui/Detail.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
@@ -14,6 +15,15 @@ function displayFileName(path) {
   return path.split(/[\\/]/).filter(Boolean).pop() || path;
 }
 
+function shortId(id) {
+  if (!id) return '-';
+  return id.length > 12 ? `${id.slice(0, 8)}...${id.slice(-4)}` : id;
+}
+
+function policyEntries(entries) {
+  return entries.filter(([, count]) => count > 0);
+}
+
 export default function SessionsPage() {
   const [selectedThreadId, setSelectedThreadId] = useState('');
   const { data, loading, error } = useSessions(24);
@@ -26,11 +36,11 @@ export default function SessionsPage() {
   const fileGraph = detail?.fileGraph || { files: [], links: [], totals: { files: 0, events: 0 } };
   const relatedFiles = fileGraph.files || [];
   const maxFileEvents = Math.max(...relatedFiles.map((file) => file.events || 0), 1);
-  const byApproval = Object.entries(stats.byApproval || {});
-  const bySandbox = Object.entries(stats.bySandbox || {});
+  const byApproval = policyEntries(Object.entries(stats.byApproval || {}));
+  const bySandbox = policyEntries(Object.entries(stats.bySandbox || {}));
 
   return (
-    <div className="page-grid two-col">
+    <div className="page-grid two-col sessions-workbench">
       <section className="panel session-panel">
         <PageHeader
           title="Sessions"
@@ -49,9 +59,12 @@ export default function SessionsPage() {
                 type="button"
                 onClick={() => setSelectedThreadId(thread.id)}
               >
-                <div>
-                  <strong>{thread.title || thread.id}</strong>
-                  <p>{thread.firstUserMessage || thread.model || 'No summary recorded'}</p>
+                <div className="thread-main">
+                  <span className="thread-status-dot" aria-hidden="true" />
+                  <div>
+                    <strong>{thread.title || thread.id}</strong>
+                    <p>{thread.firstUserMessage || thread.model || 'No summary recorded'}</p>
+                  </div>
                 </div>
                 <div className="thread-meta">
                   <span>{thread.model || '-'}</span>
@@ -74,21 +87,44 @@ export default function SessionsPage() {
           <EmptyState title="No session selected" description="Select a session to inspect metadata and related activity." />
         ) : (
           <>
-            <div className="detail-list">
-              <Detail label="Title" value={activeThread.title || '-'} />
+            <div className="session-hero">
+              <div className="session-hero-icon">
+                <GitBranch size={20} aria-hidden="true" />
+              </div>
+              <div>
+                <span>Conversation seed</span>
+                <strong>{activeThread.title || 'Untitled session'}</strong>
+                {activeThread.firstUserMessage ? <p>{activeThread.firstUserMessage}</p> : <p>No first user message recorded.</p>}
+              </div>
+            </div>
+
+            <div className="session-runtime-grid">
               <Detail label="Model" value={activeThread.model || '-'} />
               <Detail label="Reasoning" value={activeThread.reasoningEffort || '-'} />
               <Detail label="Approval" value={activeThread.approvalMode || '-'} />
               <Detail label="Sandbox" value={activeThread.sandboxType || '-'} />
-              <Detail label="Tokens" value={activeThread.tokensUsed ?? '-'} />
+              <Detail label="Tokens" value={activeThread.tokensUsed ? formatCompact(activeThread.tokensUsed) : '-'} />
               <Detail label="Updated" value={formatDate(activeThread.updatedAtIso)} />
             </div>
-            {activeThread.firstUserMessage && (
-              <div className="session-message">
-                <strong>First message</strong>
-                <p>{activeThread.firstUserMessage}</p>
+
+            <div className="session-context-strip">
+              <div>
+                <Clock3 size={16} aria-hidden="true" />
+                <span>Session id</span>
+                <strong>{shortId(activeThread.id)}</strong>
               </div>
-            )}
+              <div>
+                <FileText size={16} aria-hidden="true" />
+                <span>Linked files</span>
+                <strong>{formatCompact(fileGraph.totals?.files || 0)}</strong>
+              </div>
+              <div>
+                <ShieldCheck size={16} aria-hidden="true" />
+                <span>Boundary</span>
+                <strong>{activeThread.sandboxType || '-'}</strong>
+              </div>
+            </div>
+
             <h2 className="section-title">Touched Files</h2>
             <div className="relationship-summary">
               <Detail label="Files" value={formatCompact(fileGraph.totals?.files || 0)} />
@@ -133,20 +169,22 @@ export default function SessionsPage() {
             </div>
           </>
         )}
-        <div className="session-policy-grid">
-          <div>
-            <h2>Session Policy</h2>
-            <div className="chips">
-              {byApproval.map(([name, count]) => <Badge className="chip" key={name}>{name}: {count}</Badge>)}
+        {(byApproval.length > 0 || bySandbox.length > 0) && (
+          <div className="session-policy-grid">
+            <div>
+              <h2>Session Policy</h2>
+              <div className="chips">
+                {byApproval.map(([name, count]) => <Badge className="chip" key={name}>{name}: {count}</Badge>)}
+              </div>
+            </div>
+            <div>
+              <h2>Sandbox</h2>
+              <div className="chips">
+                {bySandbox.map(([name, count]) => <Badge className="chip" key={name}>{name}: {count}</Badge>)}
+              </div>
             </div>
           </div>
-          <div>
-            <h2>Sandbox</h2>
-            <div className="chips">
-              {bySandbox.map(([name, count]) => <Badge className="chip" key={name}>{name}: {count}</Badge>)}
-            </div>
-          </div>
-        </div>
+        )}
       </section>
     </div>
   );
