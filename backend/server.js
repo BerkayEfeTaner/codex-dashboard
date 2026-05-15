@@ -23,8 +23,10 @@ const {
   buildAgentDetailPayload,
   buildSessionDetailPayload
 } = require('./services');
+const { createSkillCandidateDaemon } = require('./services/skillCandidates');
 
 const app = express();
+const skillCandidateDaemon = createSkillCandidateDaemon();
 
 app.use(cors({
   origin: CORS_ORIGINS
@@ -54,6 +56,9 @@ app.get('/api/agents/:id', (req, res) => {
 });
 
 app.get('/api/capabilities', (req, res) => res.json(buildCapabilitiesPayload()));
+app.get('/api/skill-candidates', (req, res) => {
+  res.json(skillCandidateDaemon.getSnapshot({ refreshIfStale: true }));
+});
 app.get('/api/profiles', (req, res) => res.json(buildProfilesPayload()));
 app.post('/api/config/preview', (req, res) => res.json(buildConfigPreviewPayload(req.body || {})));
 app.get('/api/diagnostics/report', (req, res) => res.json(buildDiagnosticReportPayload()));
@@ -104,10 +109,12 @@ if (require.main === module) {
     console.warn('Summary warmup failed:', error.message);
   }
 
+  skillCandidateDaemon.start();
+
   app.listen(PORT, () => {
     console.log(`Codex Dashboard API running on http://localhost:${PORT}`);
     console.log(`Reading Codex data from ${CODEX_DIR}`);
   });
 }
 
-module.exports = { app, buildReleaseHealth };
+module.exports = { app, buildReleaseHealth, skillCandidateDaemon };

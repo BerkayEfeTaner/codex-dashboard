@@ -1,10 +1,11 @@
 import { createElement, useMemo, useState } from 'react';
 import { Badge, Input } from 'reactstrap';
-import { Boxes, KeyRound, Layers3, Puzzle, Search, ShieldCheck } from 'lucide-react';
+import { Boxes, FilePlus2, KeyRound, Layers3, Puzzle, Search, ShieldCheck } from 'lucide-react';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import { InlineError } from '../../components/ui/InlineError.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { useCapabilities } from '../../hooks/useCapabilities.js';
+import { useSkillCandidates } from '../../hooks/useSkillCandidates.js';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
 function SummaryTile({ label, value, hint, icon }) {
@@ -204,8 +205,128 @@ function SourceRow({ label, source }) {
   );
 }
 
+function formatConfidence(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return '0%';
+  return `${Math.round(numericValue * 100)}%`;
+}
+
+function SkillCandidateQueue({ candidates, loading, error }) {
+  if (error) {
+    return <InlineError message={error} />;
+  }
+
+  if (loading && candidates.length === 0) {
+    return (
+      <div className="skill-candidate-empty">
+        <strong>Scanning local signals</strong>
+        <small>Candidate queue will appear after repeated non-telemetry patterns are detected.</small>
+      </div>
+    );
+  }
+
+  if (candidates.length === 0) {
+    return (
+      <div className="skill-candidate-empty">
+        <strong>No candidates yet</strong>
+        <small>Repeated workflow gaps will be listed here before any SKILL.md is created.</small>
+      </div>
+    );
+  }
+
+  return (
+    <div className="skill-candidate-list">
+      {candidates.slice(0, 4).map((candidate) => (
+        <article className="skill-candidate-card" key={candidate.id}>
+          <header>
+            <div>
+              <span className="eyebrow">{candidate.status}</span>
+              <h3>{candidate.title}</h3>
+            </div>
+            <Badge color={candidate.confidence >= 0.78 ? 'success' : 'light'}>
+              {formatConfidence(candidate.confidence)}
+            </Badge>
+          </header>
+          <p>{candidate.description}</p>
+          <div className="skill-candidate-meta">
+            <span>{formatCompact(candidate.evidenceCount)} signals</span>
+            <span>{candidate.name}</span>
+            <span>{formatDate(candidate.updatedAt)}</span>
+          </div>
+        </article>
+      ))}
+      {candidates.length > 4 && (
+        <span className="skill-candidate-more">+{candidates.length - 4} more candidates</span>
+      )}
+    </div>
+  );
+}
+
+function SkillAutonomyPanel({ data, loading, error }) {
+  const candidates = data?.candidates || [];
+  const stats = data?.stats || {};
+  const daemon = data?.daemon || {};
+  const isWatching = daemon.status === 'watching';
+
+  return (
+    <section className="panel wide skill-autonomy-panel">
+      <div className="skill-autonomy-heading">
+        <div className="capabilities-summary-icon">
+          <FilePlus2 size={18} aria-hidden="true" />
+        </div>
+        <div>
+          <span className="eyebrow">Autonomous growth</span>
+          <div className="skill-autonomy-title-row">
+            <h2>Skill candidate daemon</h2>
+            <Badge color={isWatching ? 'success' : 'light'}>{isWatching ? 'watching' : 'idle'}</Badge>
+          </div>
+          <p>Repeated local signals become candidate skills. This daemon does not write skill files automatically.</p>
+        </div>
+      </div>
+
+      <div className="skill-autonomy-flow" aria-label="Autonomous skill lifecycle">
+        <div>
+          <span>1</span>
+          <strong>Gap detected</strong>
+          <small>A repeated workflow or missing rule becomes visible during work.</small>
+        </div>
+        <div>
+          <span>2</span>
+          <strong>Skill drafted</strong>
+          <small>Codex prepares a focused SKILL.md with trigger rules and lean guidance.</small>
+        </div>
+        <div>
+          <span>3</span>
+          <strong>Catalog updated</strong>
+          <small>The new skill becomes discoverable from this capability library.</small>
+        </div>
+      </div>
+
+      <div className="skill-candidate-queue">
+        <div className="skill-candidate-queue-header">
+          <div>
+            <span className="eyebrow">Candidate queue</span>
+            <strong>{formatCompact(stats.candidates || 0)} open candidates</strong>
+          </div>
+          <div className="skill-candidate-stats">
+            <Badge color="light">{formatCompact(stats.signals || 0)} signals</Badge>
+            <Badge color="light">{formatCompact(stats.highConfidence || 0)} high</Badge>
+          </div>
+        </div>
+        <SkillCandidateQueue candidates={candidates} loading={loading} error={error} />
+        <div className="skill-autonomy-note">
+          <span>Boundary</span>
+          <strong>{daemon.mode || 'read-only'} / {daemon.writesSkills ? 'writes skills' : 'candidate only'}</strong>
+          <small>Promotion to a real skill still runs through Codex file edits and review.</small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function CapabilitiesPage() {
   const { data, loading, error } = useCapabilities();
+  const { data: skillCandidates, loading: skillCandidatesLoading, error: skillCandidatesError } = useSkillCandidates();
   const [query, setQuery] = useState('');
   const [activeType, setActiveType] = useState('all');
   const [selectedId, setSelectedId] = useState(null);
@@ -276,6 +397,8 @@ export default function CapabilitiesPage() {
           />
         </div>
       </section>
+
+      <SkillAutonomyPanel data={skillCandidates} loading={skillCandidatesLoading} error={skillCandidatesError} />
 
       <div className="capability-workbench wide">
         <aside className="panel capability-filter-panel">

@@ -41,6 +41,10 @@ export function fetchCapabilities() {
   return requestJson('/api/capabilities');
 }
 
+export function fetchSkillCandidates() {
+  return requestJson('/api/skill-candidates');
+}
+
 export function fetchProfiles() {
   return requestJson('/api/profiles');
 }
