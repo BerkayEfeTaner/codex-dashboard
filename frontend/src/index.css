@@ -281,6 +281,10 @@ h3 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.usage-stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
 .stat-card,
 .panel {
   border: 1px solid var(--line);
@@ -631,6 +635,10 @@ h3 {
 
 .usage-window-section p {
   margin-top: 3px;
+}
+
+.usage-limit-config {
+  margin-top: 14px;
 }
 
 .usage-limit-card {

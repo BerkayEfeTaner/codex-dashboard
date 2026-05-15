@@ -29,8 +29,8 @@ const navGroups = [
     items: [
       { to: '/sessions', label: 'Sessions', icon: GitBranch },
       { to: '/execution', label: 'Execution', icon: Wrench },
-      { to: '/activity', label: 'Activity', icon: TerminalSquare },
-      { to: '/analytics', label: 'Analytics', icon: BarChart3 }
+      { to: '/activity', label: 'Signals', icon: TerminalSquare },
+      { to: '/analytics', label: 'Usage', icon: BarChart3 }
     ]
   },
   {

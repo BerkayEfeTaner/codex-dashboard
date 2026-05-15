@@ -307,6 +307,7 @@ function buildAnalyticsPayload(options = {}) {
   const days = clampDays(options.days, 14, 90);
   const tt = readThreadTrend(days);
   const lt = readLogTrend(days);
+  const usage = buildUsageSummary();
   const threadRowsByDay = new Map(tt.rows.map((row) => [row.day, row]));
   const logRowsByDay = new Map(lt.rows.map((row) => [row.day, row]));
   const daily = tt.buckets.map((day) => {
@@ -339,9 +340,11 @@ function buildAnalyticsPayload(options = {}) {
     averages: {
       sessionsPerDay: Number((totals.sessions / days).toFixed(2)),
       logEventsPerDay: Number((totals.logEvents / days).toFixed(2)),
-      tokensPerDay: Number((totals.tokensUsed / days).toFixed(2))
+      tokensPerDay: Number((totals.tokensUsed / days).toFixed(2)),
+      tokensPerWeek: Number(((totals.tokensUsed / days) * 7).toFixed(2))
     },
     distributions: { models: tt.models, targets: lt.targets, levels: lt.levels },
+    usage,
     source: {
       threads: checkSqliteAvailability('state_5.sqlite'),
       logs: checkSqliteAvailability('logs_2.sqlite')

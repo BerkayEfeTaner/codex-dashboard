@@ -14,12 +14,17 @@ const initialAnalyticsTrends = {
   averages: {
     sessionsPerDay: 0,
     logEventsPerDay: 0,
-    tokensPerDay: 0
+    tokensPerDay: 0,
+    tokensPerWeek: 0
   },
   distributions: {
     models: [],
     targets: [],
     levels: []
+  },
+  usage: {
+    rateLimits: {},
+    periods: {}
   }
 };
 

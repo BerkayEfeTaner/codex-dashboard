@@ -53,24 +53,24 @@ export default function ActivityPage() {
     <div className="page-grid two-col">
       <section className="panel activity-panel">
         <PageHeader
-          title="Activity"
-          subtitle={loading ? 'Loading recent log entries' : `${pageStart}-${pageEnd} of ${pagination.total} raw log entries`}
+          title="Signals"
+          subtitle={loading ? 'Loading recent Codex signals' : `${pageStart}-${pageEnd} of ${pagination.total} raw Codex signals`}
           action={(
             <div className="filter-bar">
               <label className="search-box">
                 <Search size={16} aria-hidden="true" />
                 <input
-                  aria-label="Search activity"
+                  aria-label="Search signals"
                   value={query}
                   onChange={(event) => {
                     setQuery(event.target.value);
                     setOffset(0);
                   }}
-                  placeholder="Search activity"
+                  placeholder="Search signals"
                 />
               </label>
               <select
-                aria-label="Filter activity by level"
+                aria-label="Filter signals by level"
                 value={level}
                 onChange={(event) => {
                   setLevel(event.target.value);
@@ -81,7 +81,7 @@ export default function ActivityPage() {
                 {logLevels.map(([name]) => <option key={name} value={name}>{name}</option>)}
               </select>
               <select
-                aria-label="Filter activity by target"
+                aria-label="Filter signals by target"
                 value={target}
                 onChange={(event) => {
                   setTarget(event.target.value);
@@ -101,18 +101,18 @@ export default function ActivityPage() {
                 disabled={!hasFilters}
                 onClick={resetFilters}
                 title="Clear filters"
-                aria-label="Clear activity filters"
+                aria-label="Clear signal filters"
               >
                 <X size={16} aria-hidden="true" />
               </Button>
             </div>
           )}
         />
-        <div className="advanced-filter-grid" aria-label="Advanced activity filters">
+        <div className="advanced-filter-grid" aria-label="Advanced signal filters">
           <label>
             <span>Session</span>
             <input
-              aria-label="Filter activity by session id"
+              aria-label="Filter signals by session id"
               value={threadId}
               onChange={(event) => {
                 setThreadId(event.target.value);
@@ -124,7 +124,7 @@ export default function ActivityPage() {
           <label>
             <span>From</span>
             <input
-              aria-label="Filter activity from date"
+              aria-label="Filter signals from date"
               type="datetime-local"
               value={from}
               onChange={(event) => {
@@ -136,7 +136,7 @@ export default function ActivityPage() {
           <label>
             <span>To</span>
             <input
-              aria-label="Filter activity to date"
+              aria-label="Filter signals to date"
               type="datetime-local"
               value={to}
               onChange={(event) => {
@@ -146,11 +146,11 @@ export default function ActivityPage() {
             />
           </label>
         </div>
-        <InlineError title="Activity unavailable" message={error} />
+        <InlineError title="Signals unavailable" message={error} />
         {activity.length === 0 ? (
           <EmptyState
-            title="No activity found"
-            description={query ? 'Try a different search term.' : 'No recent Codex log entries were found.'}
+            title="No signals found"
+            description={query ? 'Try a different search term.' : 'No recent Codex signals were found.'}
           />
         ) : (
           <div className="timeline">
@@ -191,7 +191,7 @@ export default function ActivityPage() {
       </section>
 
       <section className="panel">
-        <h2>Activity Health</h2>
+        <h2>Signal Health</h2>
         <div className="detail-list">
           {logLevels.length === 0 ? (
             <EmptyState title="No log levels" description="Log level statistics are not available yet." />
@@ -204,7 +204,7 @@ export default function ActivityPage() {
         <h2 className="section-title">Recent Signals</h2>
         <div className="compact-list">
           {recentTargets.length === 0 ? (
-            <EmptyState title="No targets" description="Recent activity targets are not available yet." />
+            <EmptyState title="No targets" description="Recent signal targets are not available yet." />
           ) : (
             recentTargets.map((target) => {
               const display = activityDisplay({ target: target.target });

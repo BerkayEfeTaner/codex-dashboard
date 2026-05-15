@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Activity, BarChart3, Clock, GitBranch } from 'lucide-react';
+import { BarChart3, CalendarDays, Clock, Gauge, GitBranch } from 'lucide-react';
 import { Button, ButtonGroup } from 'reactstrap';
 import {
   Bar,
@@ -15,14 +15,14 @@ import {
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import { InlineError } from '../../components/ui/InlineError.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { RateLimitCard } from '../../components/ui/RateLimitCard.jsx';
 import { StatCard } from '../../components/ui/StatCard.jsx';
 import { useAnalyticsTrends } from '../../hooks/useAnalyticsTrends.js';
-import { activityDisplay, isInternalActivity } from '../../utils/activityDisplay.js';
 import { formatCompact, formatDate } from '../../utils/format.js';
 
 const ranges = [7, 14, 30, 90];
 
-function DistributionList({ title, subtitle, items, emptyTitle }) {
+function DistributionList({ title, subtitle, items, emptyTitle, countLabel = 'items' }) {
   return (
     <section className="panel">
       <div className="panel-header">
@@ -39,25 +39,13 @@ function DistributionList({ title, subtitle, items, emptyTitle }) {
           {items.map((item) => (
             <div className="compact-row metric-row" key={item.name}>
               <strong>{item.name || 'unknown'}</strong>
-              <span>{formatCompact(item.count || 0)} events</span>
+              <span>{formatCompact(item.count || 0)} {countLabel}</span>
             </div>
           ))}
         </div>
       )}
     </section>
   );
-}
-
-function targetDistributionItems(items = []) {
-  const grouped = new Map();
-
-  items.forEach((item) => {
-    const display = activityDisplay({ target: item.name });
-    const name = isInternalActivity(item.name) ? 'Runtime telemetry' : display.title;
-    grouped.set(name, (grouped.get(name) || 0) + (item.count || 0));
-  });
-
-  return Array.from(grouped.entries()).map(([name, count]) => ({ name, count }));
 }
 
 export default function AnalyticsPage() {
@@ -72,13 +60,20 @@ export default function AnalyticsPage() {
   const totals = data?.totals || {};
   const averages = data?.averages || {};
   const distributions = data?.distributions || {};
-  const activitySignalDistribution = targetDistributionItems(distributions.targets || []);
+  const usage = data?.usage || {};
+  const rateLimits = usage.rateLimits || {};
+  const weeklyPeriod = usage.periods?.weekly;
+  const configuredWeeklyLimit = weeklyPeriod?.limitTokens;
+  const lastSevenTokens = useMemo(
+    () => daily.slice(-7).reduce((sum, row) => sum + (row.tokensUsed || 0), 0),
+    [daily]
+  );
 
   return (
     <div className="analytics-page page-grid">
       <PageHeader
-        title="Analytics"
-        subtitle={`${data?.range?.days || days} day UTC trend window`}
+        title="Usage"
+        subtitle={`${data?.range?.days || days} day Codex usage window`}
         status={{ label: loading ? 'Loading' : `Updated ${formatDate(data?.refreshedAt)}`, tone: loading ? 'warn' : 'ok' }}
         action={(
           <ButtonGroup className="range-control" size="sm" aria-label="Trend range">
@@ -97,25 +92,51 @@ export default function AnalyticsPage() {
         )}
       />
 
-      <InlineError title="Analytics error" message={error} />
+      <InlineError title="Usage unavailable" message={error} />
 
-      <section className="stat-grid">
+      <section className="stat-grid usage-stat-grid">
         <StatCard label="Sessions" value={formatCompact(totals.sessions || 0)} icon={GitBranch} />
-        <StatCard label="Log Events" value={formatCompact(totals.logEvents || 0)} icon={Activity} />
-        <StatCard label="Tokens" value={formatCompact(totals.tokensUsed || 0)} icon={BarChart3} />
+        <StatCard label="Total Tokens" value={formatCompact(totals.tokensUsed || 0)} icon={BarChart3} description={`${data?.range?.days || days} day window`} />
+        <StatCard label="Last 7 Days" value={formatCompact(lastSevenTokens)} icon={CalendarDays} description="actual token total" />
+        <StatCard label="Weekly Token Avg" value={formatCompact(averages.tokensPerWeek || 0)} icon={CalendarDays} description="normalized from selected range" />
         <StatCard label="Models" value={formatCompact((distributions.models || []).length)} icon={BarChart3} />
+      </section>
+
+      <section className="panel wide usage-limits-panel">
+        <PageHeader
+          title="Usage Limits"
+          subtitle="Weekly capacity and reset status from Codex rate-limit signals"
+          status={{
+            label: rateLimits?.source?.available ? 'limits detected' : 'limits unavailable',
+            tone: rateLimits?.source?.available ? 'ok' : 'idle'
+          }}
+        />
+        <div className="usage-limit-grid">
+          <RateLimitCard title="5-Hour Window" icon={Gauge} limit={rateLimits?.primary ? { ...rateLimits.primary, updatedAt: rateLimits?.updatedAt } : null} />
+          <RateLimitCard title="Weekly Window" icon={CalendarDays} limit={rateLimits?.secondary ? { ...rateLimits.secondary, updatedAt: rateLimits?.updatedAt } : null} />
+        </div>
+        <div className="compact-list usage-limit-config">
+          <div className="compact-row">
+            <strong>Configured weekly token limit</strong>
+            <span>{configuredWeeklyLimit ? formatCompact(configuredWeeklyLimit) : 'Not configured'}</span>
+          </div>
+          <div className="compact-row">
+            <strong>Weekly tokens used</strong>
+            <span>{formatCompact(weeklyPeriod?.usedTokens || lastSevenTokens)}</span>
+          </div>
+        </div>
       </section>
 
       <section className="panel wide">
         <div className="panel-header">
           <div>
-            <h2>Daily Trend</h2>
-            <p>Sessions and log events by source event day</p>
+            <h2>Session Trend</h2>
+            <p>Sessions and Codex signals by source event day</p>
           </div>
-          <span className="pill">{formatCompact(averages.logEventsPerDay || 0)} logs/day</span>
+          <span className="pill">{formatCompact(averages.logEventsPerDay || 0)} signals/day</span>
         </div>
         {!hasDailyData ? (
-          <EmptyState title="No trend data" description="Daily analytics will appear when session or log records are available." />
+          <EmptyState title="No trend data" description="Daily usage will appear when session or signal records are available." />
         ) : (
           <div className="chart-wrap chart-wrap-large">
             <ResponsiveContainer width="100%" height={320}>
@@ -162,18 +183,7 @@ export default function AnalyticsPage() {
         subtitle="Most common session models in range"
         items={distributions.models || []}
         emptyTitle="No model usage"
-      />
-      <DistributionList
-        title="Activity Signals"
-        subtitle="Most common Codex activity signals in range"
-        items={activitySignalDistribution}
-        emptyTitle="No target data"
-      />
-      <DistributionList
-        title="Levels"
-        subtitle="Log level distribution in range"
-        items={distributions.levels || []}
-        emptyTitle="No level data"
+        countLabel="sessions"
       />
 
       <section className="panel">
@@ -194,8 +204,8 @@ export default function AnalyticsPage() {
             <span>Conversation history</span>
           </div>
           <div className="compact-row">
-            <strong>{data?.source?.logs?.available ? 'Logs available' : 'Logs unavailable'}</strong>
-            <span>Activity events</span>
+            <strong>{data?.source?.logs?.available ? 'Signals available' : 'Signals unavailable'}</strong>
+            <span>Codex event stream</span>
           </div>
         </div>
       </section>
